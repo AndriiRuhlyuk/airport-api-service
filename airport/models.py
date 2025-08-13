@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import ForeignKey
 from django.utils.text import slugify
+from geopy.distance import geodesic
 from rest_framework.exceptions import ValidationError
 
 from user.models import User
@@ -33,6 +34,8 @@ class City(models.Model):
         Country, on_delete=models.CASCADE, related_name="cities"
     )
     population = models.PositiveIntegerField(null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "cities"
@@ -47,7 +50,10 @@ class City(models.Model):
         return f"{self.name} ({self.country.name})"
 
 
-def airline_logo_path(instance: "Airline", filename: str) -> pathlib.Path:
+def airline_logo_path(
+        instance: "Airline",
+        filename: str
+) -> pathlib.Path:
     filename = (
         f"{slugify(instance.code)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
     )
@@ -165,15 +171,22 @@ class Gate(models.Model):
 
     number = models.CharField(max_length=10)  # A1, B12, C3
     terminal = models.ForeignKey(
-        Terminal, on_delete=models.CASCADE, related_name="gates"
+        Terminal,
+        on_delete=models.CASCADE,
+        related_name="gates"
     )
-    gate_type = models.CharField(max_length=15, choices=GATE_TYPES, default="MIXED")
+    gate_type = models.CharField(
+        max_length=15,
+        choices=GATE_TYPES,
+        default="MIXED"
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["number", "terminal"], name="unique_gate_terminal"
+                fields=["number", "terminal"],
+                name="unique_gate_terminal"
             ),
         ]
         ordering = ("number",)
@@ -204,7 +217,11 @@ class Gate(models.Model):
             self.validate_gate_type(self.terminal, self.gate_type)
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        """
+        Without full_clean - because serializer
+        called clean method during validation
+        """
+        # self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -220,7 +237,7 @@ class Route(models.Model):
     destination = ForeignKey(
         Airport, on_delete=models.CASCADE, related_name="arrival_routes"
     )
-    distance = models.IntegerField()
+    distance = models.PositiveIntegerField(editable=False)
 
     class Meta:
         indexes = [
@@ -238,11 +255,29 @@ class Route(models.Model):
         verbose_name_plural = "routes"
         ordering = ("id",)
 
+    def save(self, *args, **kwargs):
+        """
+        Automatically calculate the distance based on the closest big city for each airport.
+        """
+        city_source = self.source.closest_big_city
+        city_destination = self.destination.closest_big_city
+
+        if city_source and city_destination:
+            coords_source = (city_source.latitude, city_source.longitude)
+            coords_destination = (city_destination.latitude, city_destination.longitude)
+
+            self.distance = round(geodesic(coords_source, coords_destination).km)
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.source.name} -> {self.destination.name} ({self.distance})"
+        return f"{self.source.name} -> {self.destination.name} ({self.distance}) km"
 
 
-def airplane_type_image_path(instance: "AirplaneType", filename: str) -> pathlib.Path:
+def airplane_type_image_path(
+        instance: "AirplaneType",
+        filename: str
+) -> pathlib.Path:
     filename = (
         f"{slugify(instance.name)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
     )
@@ -322,7 +357,7 @@ class Flight(models.Model):
         related_name="arrival_flights",
     )
     flight_number = models.CharField(max_length=10)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
 
     @property
     def flight_time(self):
@@ -367,8 +402,8 @@ class Order(models.Model):
     """Order model"""
 
     created_at = models.DateTimeField(auto_now_add=True)
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
@@ -383,9 +418,9 @@ class Ticket(models.Model):
 
     row = models.IntegerField(validators=[MinValueValidator(1)])
     seat = models.IntegerField(validators=[MinValueValidator(1)])
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE)
+    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="tickets")
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets")
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
 
     class Meta:
         constraints = [
@@ -393,7 +428,8 @@ class Ticket(models.Model):
                 fields=["row", "seat", "flight"], name="unique_ticket_row_seat_flight"
             ),
         ]
-        ordering = ["row", "seat"]
+        ordering = ["seat", "row"]
+        verbose_name_plural = "tickets"
 
     @staticmethod
     def validate_seat(seat: int, num_seats: int, error_to_rise):

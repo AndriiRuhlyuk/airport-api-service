@@ -3,6 +3,10 @@ superuser cred.:
 login: admin@admin.com
 pass.: super2025user
 
-user cred.
+user1 cred.
 login: user@user.com
 pass.: qwert12345
+
+user2 cred
+login: user1@user1.com
+pass: qwerty123456

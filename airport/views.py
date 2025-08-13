@@ -1,14 +1,16 @@
 from decimal import Decimal
 
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Count, F
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from rest_framework import viewsets, mixins, status
+from rest_framework.viewsets import ModelViewSet
+from rest_framework import viewsets, status, serializers
 from airport.permissions import IsAdminOrIfAuthenticatedReadOnly, IsAdminOrOwner
 
 from airport.models import (
@@ -59,6 +61,9 @@ from airport.serializers import (
     CrewDetailSerializer,
     OrderListSerializer,
     OrderSerializer,
+    FlightUpdateSerializer,
+    OrderUpdateSerializer,
+    OrderDetailSerializer,
 )
 
 
@@ -161,6 +166,17 @@ class AirportViewSet(viewsets.ModelViewSet):
             return AirportDetailSerializer
         return AirportSerializer
 
+    def get_queryset(self):
+        if self.action == "retrieve":
+            return Airport.objects.select_related(
+                "closest_big_city__country"
+            ).annotate(
+                terminals_count=Count("terminals")
+            )
+        return Airport.objects.select_related(
+            "closest_big_city__country"
+        )
+
 
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     """Endpoint for viewing airplane types and airplane type objects."""
@@ -220,7 +236,12 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 class AirplaneViewSet(viewsets.ModelViewSet):
     """Endpoint for viewing airplanes and airplane objects."""
 
-    queryset = Airplane.objects.select_related("airplane_type", "airline")
+    queryset = Airplane.objects.select_related(
+        "airplane_type",
+        "airline"
+    ).annotate(
+        count_seats=F("rows") * F("seats_in_row")
+    )
     serializer_class = AirplaneSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
@@ -237,7 +258,9 @@ class GateViewSet(viewsets.ModelViewSet):
 
     serializer_class = GateSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    queryset = Gate.objects.select_related("terminal__airport")
+    queryset = Gate.objects.select_related(
+        "terminal__airport"
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -285,7 +308,11 @@ class TerminalViewSet(viewsets.ModelViewSet):
 
     serializer_class = TerminalSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    queryset = Terminal.objects.all()
+    queryset = Terminal.objects.select_related(
+        "airport__closest_big_city__country"
+    ).annotate(
+        gates_count=Count("gates"),
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -390,14 +417,21 @@ class FlightViewSet(viewsets.ModelViewSet):
         "status",
         "departure_gate__terminal__airport",
         "arrival_gate__terminal__airport",
+    ).annotate(
+            tickets_available=(
+                F("airplane__rows") * F("airplane__seats_in_row")
+                - Count("tickets")
+            )
     )
 
     def get_serializer_class(self):
 
         if self.action == "list":
             return FlightListSerializer
-        elif self.action in ["retrieve", "update", "partial_update"]:
+        elif self.action == "retrieve":
             return FlightDetailSerializer
+        elif self.action in ["update", "partial_update"]:
+            return FlightUpdateSerializer
 
         return FlightSerializer
 
@@ -453,45 +487,90 @@ class FlightViewSet(viewsets.ModelViewSet):
 
 
 class CrewViewSet(viewsets.ModelViewSet):
-    """Endpoint for viewing crews for flights."""
+    """
+    Endpoint for viewing crews for flights that base queryset
+    for retrieve and list.
+    get_flight_queryset method for CustomPrimaryKeyRelatedField
+    dynamic validation flight_ids avoiding N+1 queries to DB.
+    """
 
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
     queryset = Crew.objects.prefetch_related(
-        Prefetch(
-            "flights",
-            queryset=Flight.objects.select_related(
-                "route__source",
-                "route__destination",
-                "airplane__airplane_type",
-                "airplane__airline",
-                "status"
+            Prefetch(
+                "flights",
+                queryset=Flight.objects.select_related(
+                    "route__source",
+                    "route__destination",
+                    "airplane__airplane_type",
+                    "airplane__airline",
+                    "status",
+                    "departure_gate__terminal__airport",
+                    "arrival_gate__terminal__airport"
+
+                )
             )
         )
-    )
+
+    def get_flight_queryset(self):
+        """Returns a queryset with preloaded related objects."""
+
+        return Flight.objects.select_related(
+            "route__source",
+            "route__destination",
+            "airplane__airplane_type",
+            "status",
+            "departure_gate__terminal__airport",
+            "arrival_gate__terminal__airport"
+        )
 
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
-        return [int(str_id) for str_id in qs.split(",")]
+        try:
+            return [int(str_id) for str_id in qs.split(",") if str_id.strip()]
+        except ValueError:
+            raise serializers.ValidationError({"flights": "Invalid flight IDs. Must be comma-separated integers."})
 
     def get_serializer_class(self):
+        """Overrides the serializer depending on the action."""
+
         if self.action == "list":
             return CrewListSerializer
-        if self.action in ["retrieve"]:
+        if self.action == "retrieve":
             return CrewDetailSerializer
         return CrewSerializer
 
     def get_queryset(self):
+        """Optimizes queryset for list with filtering by flights"""
 
         flights = self.request.query_params.get("flights")
         queryset = self.queryset
 
-        if flights:
+        if self.action == "list" and flights:
             flight_ids = self._params_to_ints(flights)
             queryset = queryset.filter(flights__id__in=flight_ids)
-
         return queryset.distinct()
+
+    def get_object(self):
+        """
+        Overrides object retrieval for retrieve, update, delete.
+        Uses self.get_queryset() with prefetch to load data
+        with optimization and return object with prefetched flights.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        obj = get_object_or_404(queryset, pk=self.kwargs["pk"])
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_update(self, serializer):
+        """
+        Overrides update to avoid queries to DB
+        in CrewSerializer.update.
+        """
+        instance = serializer.save()
+        return instance
+
 
     @extend_schema(
         parameters=[
@@ -512,6 +591,12 @@ class OrderPagination(PageNumberPagination):
 
 
 class OrderViewSet(ModelViewSet):
+    """
+    Endpoint for viewing orders:
+    - CRUD orders
+    - CRUD tickets
+    - Choose flights
+    """
     permission_classes = (IsAdminOrOwner,)
     pagination_class = OrderPagination
     queryset = Order.objects.prefetch_related("tickets")
@@ -544,11 +629,64 @@ class OrderViewSet(ModelViewSet):
 
         return order_queryset.filter(user=user)
 
+    def get_flight_queryset(self):
+        """
+        Returns a queryset with preloaded related objects,
+        filtered by flight_status (available)
+        """
+
+        return Flight.objects.select_related(
+            "route__source", "route__destination", "airplane"
+        ).filter(
+            status__name__in=["SCHEDULED", "BOARDING", "DELAYED"],
+            departure_time__gte=timezone.now()
+        )
+
+    def get_object(self):
+        """
+        This method queries the database to retrieve an order instance for updating,
+        that caches the order instance,
+        to avoid repeated database queries within a single request-response cycle.
+        """
+
+        if hasattr(self, "_cached_instance"):
+            return self._cached_instance
+
+        instance = super().get_object()
+        self._cached_instance = instance
+
+        return instance
+
     def get_serializer_class(self):
         if self.action == "list":
             return OrderListSerializer
+        if self.action in ["update", "partial_update"]:
+            return OrderUpdateSerializer
+        if self.action == "retrieve":
+            return OrderDetailSerializer
         return OrderSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def get_serializer_context(self):
+        """
+        Method passed flight data to serialozers
+        """
+        context = super().get_serializer_context()
 
+        if self.action in ["retrieve", "update", "partial_update"]:
+            order_instance = self.get_object()
+            context["flight"] = order_instance.flight
+
+        elif self.action == "create":
+            flight_id = self.request.data.get("flight")
+            if flight_id:
+                try:
+                    flight_queryset = self.get_flight_queryset()
+                    context["flight"] = flight_queryset.get(id=flight_id)
+                except Flight.DoesNotExist:
+                    pass
+
+        return context
+
+    def perform_create(self, serializer):
+        """Method that determined the owner of the order"""
+        serializer.save(user=self.request.user)

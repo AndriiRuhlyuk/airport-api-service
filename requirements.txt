@@ -29,3 +29,4 @@ rpds-py==0.26.0
 sqlparse==0.5.3
 typing_extensions==4.14.1
 uritemplate==4.2.0
+geopy==2.4.1
