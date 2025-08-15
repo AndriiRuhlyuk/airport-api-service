@@ -11,6 +11,7 @@ from rest_framework.exceptions import ValidationError
 from user.models import User
 
 
+
 class Country(models.Model):
     """Country model"""
 
@@ -39,7 +40,7 @@ class City(models.Model):
 
     class Meta:
         verbose_name_plural = "cities"
-        ordering = ("id",)
+        ordering = ("name",)
         constraints = [
             models.UniqueConstraint(
                 fields=["name", "country"], name="unique_city_country"
@@ -64,7 +65,7 @@ class Airline(models.Model):
     """Airline model"""
 
     name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=10, unique=True)  # IATA/ICAO code
+    code = models.CharField(max_length=10, unique=True)
     country = models.ForeignKey(
         Country, on_delete=models.CASCADE, related_name="airlines"
     )
@@ -128,7 +129,7 @@ class FlightStatus(models.Model):
 class Terminal(models.Model):
     """Airports terminal"""
 
-    name = models.CharField(max_length=50)  # Terminal A, Terminal 1
+    name = models.CharField(max_length=50)
     airport = models.ForeignKey(
         "Airport", on_delete=models.CASCADE, related_name="terminals"
     )
@@ -169,7 +170,7 @@ class Gate(models.Model):
         ("MIXED", "Mixed flights"),
     ]
 
-    number = models.CharField(max_length=10)  # A1, B12, C3
+    number = models.CharField(max_length=10)
     terminal = models.ForeignKey(
         Terminal,
         on_delete=models.CASCADE,
@@ -218,10 +219,10 @@ class Gate(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Without full_clean - because serializer
-        called clean method during validation
+        Save without full_clean, as validation is handled
+        by serializer's validate method.
         """
-        # self.full_clean()
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -259,14 +260,21 @@ class Route(models.Model):
         """
         Automatically calculate the distance based on the closest big city for each airport.
         """
-        city_source = self.source.closest_big_city
-        city_destination = self.destination.closest_big_city
 
-        if city_source and city_destination:
-            coords_source = (city_source.latitude, city_source.longitude)
-            coords_destination = (city_destination.latitude, city_destination.longitude)
+        city_source = getattr(self.source, "closest_big_city", None)
+        city_destination = getattr(self.destination, "closest_big_city", None)
 
-            self.distance = round(geodesic(coords_source, coords_destination).km)
+        if (not city_source or not city_destination or not city_source.latitude
+                or not city_source.longitude or not city_destination.latitude
+                or not city_destination.longitude):
+            raise ValueError(
+                "Cannot calculate distance: missing coordinates for source or destination city."
+            )
+
+        coords_source = (city_source.latitude, city_source.longitude)
+        coords_destination = (city_destination.latitude, city_destination.longitude)
+
+        self.distance = round(geodesic(coords_source, coords_destination).km)
 
         super().save(*args, **kwargs)
 
@@ -313,12 +321,6 @@ class Airplane(models.Model):
     )
     registration_number = models.CharField(max_length=20, unique=True)
     is_active = models.BooleanField(default=True)
-
-    @property
-    def num_seats(self):
-        if self.rows and self.seats_in_row:
-            return self.rows * self.seats_in_row
-        return None
 
     class Meta:
         verbose_name_plural = "airplanes"

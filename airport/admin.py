@@ -193,13 +193,19 @@ class AirplaneAdmin(admin.ModelAdmin):
         "registration_number",
         "airline",
         "airplane_type",
-        "num_seats",
+        "get_num_seats",
         "is_active",
     ]
     search_fields = ["name", "registration_number", "airline__name"]
     list_filter = ["airline", "airplane_type", "is_active"]
     ordering = ["airline__name", "name"]
-    readonly_fields = ["num_seats"]
+    readonly_fields = ["get_num_seats"]
+
+    def get_num_seats(self, obj):
+        """Calculate the total number of seats (rows * seats_in_row)."""
+        return obj.rows * obj.seats_in_row
+
+    get_num_seats.short_description = "Number of Seats"
 
 
 @admin.register(Flight)

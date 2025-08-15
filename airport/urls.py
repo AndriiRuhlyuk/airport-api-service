@@ -11,7 +11,9 @@ from airport.views import (
     GateViewSet,
     TerminalViewSet,
     RouteViewSet,
-    FlightViewSet, CrewViewSet, OrderViewSet,
+    FlightViewSet,
+    CrewViewSet,
+    OrderViewSet,
 )
 
 app_name = "airport"

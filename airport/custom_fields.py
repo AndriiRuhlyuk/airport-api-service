@@ -12,13 +12,9 @@ class RepresentationChoiceField(serializers.ChoiceField):
     and validates its presence in the `choices` list.
     """
     def to_representation(self, value):
-        """
-        Method is called when the response (output) is serialized.
-        It takes a model object (for example, an Airport instance)
-        and returns its text representation.
-        Value - full object,
-        str - __str__ method called on this object.
-        """
+        """Return string representation of the object or None if invalid."""
+        if value is None:
+            return None
         return str(value)
 
 
