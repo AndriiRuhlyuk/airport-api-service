@@ -24,19 +24,31 @@ class OptimizedRelatedField(serializers.PrimaryKeyRelatedField):
     created by BrowsableAPIRenderer.
 
     It uses the standard PrimaryKeyRelatedField logic for validation,
-    but uses a ready-made,
-    static choices list to build the drop-down list, which prevents repeated database queries.
+    but can use a dynamic queryset to build the drop-down list,
+    preventing repeated database queries while allowing updates.
     """
+
     def __init__(self, **kwargs):
         self.static_choices = kwargs.pop("choices", [])
+        self._dynamic_choices = None
         super().__init__(**kwargs)
+
+    def get_queryset(self):
+        """
+        Return the dynamic queryset for validation.
+        """
+
+        return self.queryset
 
     def get_choices(self, cutoff=None):
         """
-        Override the method so that it always returns our static list,
-        converted to the dictionary that the renderer expects.
+        Return dynamic choices based on the queryset if available,
+        otherwise use static choices.
         """
-        return dict(self.static_choices)
+
+        if self._dynamic_choices is None and self.queryset:
+            self._dynamic_choices = dict((str(gate.pk), str(gate)) for gate in self.queryset.all())
+        return self._dynamic_choices or dict(self.static_choices)
 
 
 class CustomPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
@@ -45,20 +57,25 @@ class CustomPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
     view -> (get_flight_queryset).
     Return select_related-queryset from view.
     """
+
     def get_queryset(self):
         view = self.context.get("view")
         if view and hasattr(view, "get_flight_queryset"):
             return view.get_flight_queryset()
-        raise serializers.ValidationError(f"No queryset provided for field '{self.field_name}'.")
+        raise serializers.ValidationError(
+            f"No queryset provided for field '{self.field_name}'."
+        )
 
 
 class BulkManyPrimaryKeyRelatedField(serializers.ManyRelatedField):
     """Custom field for bulk-query for all flight IDs"""
     def __init__(self, child_relation=None, *args, **kwargs):
         """
-        Remove many to avoid TypeError and create CustomPrimaryKeyRelatedField
+        Remove many to avoid TypeError and create
+         CustomPrimaryKeyRelatedField
         to work with every element of list.
         """
+
         kwargs.pop("many", None)
         if child_relation is None:
             child_relation = CustomPrimaryKeyRelatedField(*args, **kwargs)
@@ -66,9 +83,11 @@ class BulkManyPrimaryKeyRelatedField(serializers.ManyRelatedField):
 
     def run_child_validation(self, data):
         """
-        Override the method to skip individual child validation (handled in bulk)
+        Override the method to skip
+         individual child validation (handled in bulk)
         return data without changes
         """
+
         return data
 
     def to_internal_value(self, data):
@@ -85,14 +104,16 @@ class BulkManyPrimaryKeyRelatedField(serializers.ManyRelatedField):
 
         queryset = self.child_relation.get_queryset()
         if queryset is None:
-            raise serializers.ValidationError(f"No queryset provided for field '{self.field_name}'.")
+            raise serializers.ValidationError(
+                f"No queryset provided for field '{self.field_name}'."
+            )
 
         pks = []
         for item in data:
             try:
                 pk = int(item)
             except (TypeError, ValueError):
-                self.fail('incorrect_type', data_type=type(item).__name__)
+                self.fail("incorrect_type", data_type=type(item).__name__)
             pks.append(pk)
 
         unique_pks = set(pks)

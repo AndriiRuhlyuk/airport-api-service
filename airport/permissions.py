@@ -20,6 +20,7 @@ class IsAdminOrOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         return bool(
             request.user and (
-                request.user.is_staff or getattr(obj, "user_id", None) == request.user.id
+                request.user.is_staff or
+                getattr(obj, "user_id", None) == request.user.id
             )
         )

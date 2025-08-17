@@ -17,27 +17,45 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="airplane",
-            options={"ordering": ["name"], "verbose_name_plural": "airplanes"},
+            options={
+                "ordering": ["name"],
+                "verbose_name_plural": "airplanes"
+            },
         ),
         migrations.AlterModelOptions(
             name="airplanetype",
-            options={"ordering": ["name"], "verbose_name_plural": "airplane_types"},
+            options={
+                "ordering": ["name"],
+                "verbose_name_plural": "airplane_types"
+            },
         ),
         migrations.AlterModelOptions(
             name="airport",
-            options={"ordering": ("id",), "verbose_name_plural": "airports"},
+            options={
+                "ordering": ("id",),
+                "verbose_name_plural": "airports"
+            },
         ),
         migrations.AlterModelOptions(
             name="city",
-            options={"ordering": ("id",), "verbose_name_plural": "cities"},
+            options={
+                "ordering": ("id",),
+                "verbose_name_plural": "cities"
+            },
         ),
         migrations.AlterModelOptions(
             name="country",
-            options={"ordering": ("id",), "verbose_name_plural": "countries"},
+            options={
+                "ordering": ("id",),
+                "verbose_name_plural": "countries"
+            },
         ),
         migrations.AlterModelOptions(
             name="flight",
-            options={"ordering": ["id"], "verbose_name_plural": "flights"},
+            options={
+                "ordering": ["id"],
+                "verbose_name_plural": "flights"
+            },
         ),
         migrations.AlterModelOptions(
             name="flightstatus",
@@ -49,7 +67,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="route",
-            options={"ordering": ("id",), "verbose_name_plural": "routes"},
+            options={
+                "ordering": ("id",),
+                "verbose_name_plural": "routes"
+            },
         ),
         migrations.AlterModelOptions(
             name="terminal",
@@ -57,7 +78,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="ticket",
-            options={"ordering": ["row", "seat"], "verbose_name_plural": "tickets"},
+            options={
+                "ordering": ["row", "seat"],
+                "verbose_name_plural": "tickets"
+            },
         ),
         migrations.AddField(
             model_name="city",
@@ -72,7 +96,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="flight",
             name="price",
-            field=models.DecimalField(decimal_places=2, max_digits=10, null=True),
+            field=models.DecimalField(
+                decimal_places=2,
+                max_digits=10,
+                null=True
+            ),
         ),
         migrations.AlterField(
             model_name="flightstatus",
@@ -116,6 +144,10 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="ticket",
             name="price",
-            field=models.DecimalField(decimal_places=2, max_digits=10, null=True),
+            field=models.DecimalField(
+                decimal_places=2,
+                max_digits=10,
+                null=True
+            ),
         ),
     ]

@@ -1,4 +1,5 @@
-import random, string
+import random
+import string
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
@@ -14,14 +15,20 @@ from airport.models import (
     Airport,
     Route,
 )
-from airport.serializers import  RouteListSerializer, RouteDetailSerializer
-from airport.views import  RouteViewSet
+from airport.serializers import (
+    RouteListSerializer,
+    RouteDetailSerializer
+)
+from airport.views import RouteViewSet
+
 
 ROUTE_URL = reverse("airport:route-list")
+
 
 def _rand_letters(k: int) -> str:
     """Generate a random string of length k"""
     return "".join(random.choices(string.ascii_uppercase, k=k))
+
 
 def _unique_code(model, field: str, k: int) -> str:
     """Generate a random string of length k"""
@@ -30,8 +37,10 @@ def _unique_code(model, field: str, k: int) -> str:
         if not model.objects.filter(**{field: code}).exists():
             return code
 
+
 def uniq(prefix: str) -> str:
     return f"{prefix}-{uuid4().hex[:6].upper()}"
+
 
 def sample_country(**params) -> Country:
     """Sample country object."""
@@ -44,6 +53,7 @@ def sample_country(**params) -> Country:
     }
     defaults.update(params)
     return Country.objects.create(**defaults)
+
 
 def sample_city(
         *,
@@ -58,11 +68,16 @@ def sample_city(
         "name": params.pop("name", uniq("City")),
         "country": country,
         "population": 1000,
-        "latitude": params.pop("latitude", 50.0 + random.uniform(-1, 1)),
-        "longitude": params.pop("longitude", 30.0 + random.uniform(-1, 1))
+        "latitude": params.pop(
+            "latitude", 50.0 + random.uniform(-1, 1)
+        ),
+        "longitude": params.pop(
+            "longitude", 30.0 + random.uniform(-1, 1)
+        )
     }
     defaults.update(params)
     return City.objects.create(**defaults)
+
 
 def sample_airport(
         *,
@@ -76,11 +91,18 @@ def sample_airport(
     defaults = {
         "name": "Test Airport",
         "closest_big_city": city,
-        "iata_code": params.pop("iata_code", _unique_code(Airport, "iata_code", 3)),
-        "icao_code": params.pop("icao_code", _unique_code(Airport, "icao_code", 4)),
+        "iata_code": params.pop(
+            "iata_code",
+            _unique_code(Airport, "iata_code", 3)
+        ),
+        "icao_code": params.pop(
+            "icao_code",
+            _unique_code(Airport, "icao_code", 4)
+        ),
     }
     defaults.update(params)
     return Airport.objects.create(**defaults)
+
 
 def sample_route(
         *,
@@ -103,6 +125,7 @@ def sample_route(
     }
     defaults.update(params)
     return Route.objects.create(**defaults)
+
 
 def detail_url(route_id: int):
     """Return the detail URL"""
@@ -160,8 +183,14 @@ class AuthenticatedRouteApiTests(TestCase):
         country2 = sample_country(name="Brazil")
         city1 = sample_city(country=country1, name="City A1")
         city2 = sample_city(country=country2, name="City B1")
-        airport1 = sample_airport(closest_big_city=city1, name="Airport A1")
-        airport2 = sample_airport(closest_big_city=city2, name="Airport B1")
+        airport1 = sample_airport(
+            closest_big_city=city1,
+            name="Airport A1"
+        )
+        airport2 = sample_airport(
+            closest_big_city=city2,
+            name="Airport B1"
+        )
 
         payload = {
             "source": airport1,
@@ -179,8 +208,14 @@ class AuthenticatedRouteApiTests(TestCase):
         country2 = sample_country(name="Brazil")
         city1 = sample_city(country=country1, name="London")
         city2 = sample_city(country=country2, name="Rio")
-        airport1 = sample_airport(closest_big_city=city1, name="London International Airport")
-        airport2 = sample_airport(closest_big_city=city2, name="Rio Great Airport")
+        airport1 = sample_airport(
+            closest_big_city=city1,
+            name="London International Airport"
+        )
+        airport2 = sample_airport(
+            closest_big_city=city2,
+            name="Rio Great Airport"
+        )
 
         route_uk_br = sample_route(
             source=airport1,
@@ -191,8 +226,14 @@ class AuthenticatedRouteApiTests(TestCase):
         country4 = sample_country(name="Italy")
         city3 = sample_city(country=country3, name="Berlin")
         city4 = sample_city(country=country4, name="Rome")
-        airport3 = sample_airport(closest_big_city=city3, name="Berlin International Airport")
-        airport4 = sample_airport(closest_big_city=city4, name="Rome Great Airport")
+        airport3 = sample_airport(
+            closest_big_city=city3,
+            name="Berlin International Airport"
+        )
+        airport4 = sample_airport(
+            closest_big_city=city4,
+            name="Rome Great Airport"
+        )
 
         route_gr_it = sample_route(
             source=airport3,
@@ -201,8 +242,14 @@ class AuthenticatedRouteApiTests(TestCase):
 
         route_3 = sample_route()
 
-        res_source = self.client.get(ROUTE_URL, {"source_name": "International"})
-        res_destination = self.client.get(ROUTE_URL, {"destination_name": "Great"})
+        res_source = self.client.get(
+            ROUTE_URL,
+            {"source_name": "International"}
+        )
+        res_destination = self.client.get(
+            ROUTE_URL,
+            {"destination_name": "Great"}
+        )
 
         serializer_1 = RouteListSerializer(route_uk_br)
         serializer_2 = RouteListSerializer(route_gr_it)
@@ -210,10 +257,16 @@ class AuthenticatedRouteApiTests(TestCase):
 
         self.assertIn(serializer_1.data, res_source.data["results"])
         self.assertIn(serializer_2.data, res_source.data["results"])
-        self.assertNotIn(serializer_unrelated.data, res_source.data["results"])
+        self.assertNotIn(
+            serializer_unrelated.data,
+            res_source.data["results"]
+        )
         self.assertIn(serializer_1.data, res_destination.data["results"])
         self.assertIn(serializer_2.data, res_destination.data["results"])
-        self.assertNotIn(serializer_unrelated.data, res_destination.data["results"])
+        self.assertNotIn(
+            serializer_unrelated.data,
+            res_destination.data["results"]
+        )
 
 
 class AdminRouteApiTests(TestCase):
@@ -233,8 +286,14 @@ class AdminRouteApiTests(TestCase):
         country2 = sample_country(name="Brazil")
         city1 = sample_city(country=country1, name="London")
         city2 = sample_city(country=country2, name="Rio")
-        airport1 = sample_airport(closest_big_city=city1, name="London Airport")
-        airport2 = sample_airport(closest_big_city=city2, name="Rio Airport")
+        airport1 = sample_airport(
+            closest_big_city=city1,
+            name="London Airport"
+        )
+        airport2 = sample_airport(
+            closest_big_city=city2,
+            name="Rio Airport"
+        )
 
         payload = {
             "source": str(airport1.id),

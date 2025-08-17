@@ -62,7 +62,9 @@ class AirlineAdmin(admin.ModelAdmin):
 
     def logo_preview(self, obj):
         if obj.logo:
-            return format_html("<img src='{}' width='90' height='50' />", obj.logo.url)
+            return format_html(
+                "<img src='{}' width='90' height='50' />",
+                obj.logo.url)
         return "No logo"
 
     logo_preview.short_description = "Logo Preview"
@@ -70,7 +72,12 @@ class AirlineAdmin(admin.ModelAdmin):
 
 @admin.register(FlightStatus)
 class FlightStatusAdmin(admin.ModelAdmin):
-    list_display = ["name", "get_display_name", "color_preview", "description"]
+    list_display = [
+        "name",
+        "get_display_name",
+        "color_preview",
+        "description"
+    ]
     search_fields = ["name"]
     list_filter = ["name"]
 
@@ -82,7 +89,10 @@ class FlightStatusAdmin(admin.ModelAdmin):
     def color_preview(self, obj):
         if obj.color_code:
             return format_html(
-                '<div style="width: 20px; height: 20px; background-color: {}; border: 1px solid #ccc;"></div>',
+                '<div style="width: 20px; '
+                'height: 20px; '
+                'background-color: {}; '
+                'border: 1px solid #ccc;"></div>',
                 obj.color_code,
             )
         return "No color"
@@ -112,10 +122,28 @@ class TerminalAdmin(admin.ModelAdmin):
 
 @admin.register(Gate)
 class GateAdmin(admin.ModelAdmin):
-    list_display = ["number", "terminal", "airport", "gate_type", "is_active"]
-    search_fields = ["number", "terminal__name", "terminal__airport__name"]
-    list_filter = ["gate_type", "is_active", "terminal__airport"]
-    ordering = ["terminal__airport__name", "terminal__name", "number"]
+    list_display = [
+        "number",
+        "terminal",
+        "airport",
+        "gate_type",
+        "is_active"
+    ]
+    search_fields = [
+        "number",
+        "terminal__name",
+        "terminal__airport__name"
+    ]
+    list_filter = [
+        "gate_type",
+        "is_active",
+        "terminal__airport"
+    ]
+    ordering = [
+        "terminal__airport__name",
+        "terminal__name",
+        "number"
+    ]
 
     def airport(self, obj):
         return obj.terminal.airport.name
@@ -125,8 +153,19 @@ class GateAdmin(admin.ModelAdmin):
 
 @admin.register(Airport)
 class AirportAdmin(admin.ModelAdmin):
-    list_display = ["name", "iata_code", "icao_code", "closest_big_city", "country"]
-    search_fields = ["name", "iata_code", "icao_code", "closest_big_city__name"]
+    list_display = [
+        "name",
+        "iata_code",
+        "icao_code",
+        "closest_big_city",
+        "country"
+    ]
+    search_fields = [
+        "name",
+        "iata_code",
+        "icao_code",
+        "closest_big_city__name"
+    ]
     list_filter = ["closest_big_city__country"]
     ordering = ["name"]
 
@@ -165,7 +204,12 @@ class RouteAdmin(admin.ModelAdmin):
 
 @admin.register(AirplaneType)
 class AirplaneTypeAdmin(admin.ModelAdmin):
-    list_display = ["name", "manufacturer", "image_preview", "airplanes_count"]
+    list_display = [
+        "name",
+        "manufacturer",
+        "image_preview",
+        "airplanes_count"
+    ]
     search_fields = ["name", "manufacturer"]
     list_filter = ["manufacturer"]
     ordering = ["name"]
@@ -174,7 +218,8 @@ class AirplaneTypeAdmin(admin.ModelAdmin):
     def image_preview(self, obj):
         if obj.image:
             return format_html(
-                '<img src="{}" width="100" height="60" />', obj.image.url
+                '<img src="{}" width="100" height="60" />',
+                obj.image.url
             )
         return "No image"
 
@@ -196,7 +241,11 @@ class AirplaneAdmin(admin.ModelAdmin):
         "get_num_seats",
         "is_active",
     ]
-    search_fields = ["name", "registration_number", "airline__name"]
+    search_fields = [
+        "name",
+        "registration_number",
+        "airline__name"
+    ]
     list_filter = ["airline", "airplane_type", "is_active"]
     ordering = ["airline__name", "name"]
     readonly_fields = ["get_num_seats"]
@@ -220,7 +269,11 @@ class FlightAdmin(admin.ModelAdmin):
         "flight_time_display",
         "price",
     ]
-    search_fields = ["flight_number", "route__source__name", "route__destination__name"]
+    search_fields = [
+        "flight_number",
+        "route__source__name",
+        "route__destination__name"
+    ]
     list_filter = [
         "status",
         "airplane__airline",

@@ -11,7 +11,9 @@ from rest_framework.test import APIClient
 from airport.models import AirplaneType
 from airport.serializers import AirplaneTypeSerializer
 
+
 AIRPLANE_TYPE_URL = reverse("airport:airplanetype-list")
+
 
 def sample_airplane_type(**params) -> AirplaneType:
     """Sample airplane type object."""
@@ -23,13 +25,21 @@ def sample_airplane_type(**params) -> AirplaneType:
     defaults.update(params)
     return AirplaneType.objects.create(**defaults)
 
+
 def detail_url(airplane_type_id: int):
     """Return the detail URL"""
-    return reverse("airport:airplanetype-detail", args=[airplane_type_id])
+    return reverse(
+        "airport:airplanetype-detail",
+        args=[airplane_type_id]
+    )
+
 
 def image_upload_url(airplane_type_id):
     """Return URL for recipe image upload"""
-    return reverse("airport:airplanetype-upload-image", args=[airplane_type_id])
+    return reverse(
+        "airport:airplanetype-upload-image",
+        args=[airplane_type_id]
+    )
 
 
 class AirplaneTypeImageUploadTests(TestCase):

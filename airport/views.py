@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.db.models import Prefetch, Count, F, IntegerField
+from django.db.models import Prefetch, Count, F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -84,9 +84,12 @@ class CountryViewSet(viewsets.ModelViewSet):
 class CityViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing cities.
-    - GET /cities/ - List all cities (uses CitySerializer).
-    - GET /cities/{id}/ - Retrieve a city (uses CityDetailSerializer with nested country data).
-    - POST /cities/ - Create a new city (requires valid city and country, validates coordinates).
+    - GET /cities/ - List all cities
+    (uses CitySerializer).
+    - GET /cities/{id}/ - Retrieve a city
+    (uses CityDetailSerializer with nested country data).
+    - POST /cities/ - Create a new city
+    (requires valid city and country, validates coordinates).
     - PUT/PATCH /cities/{id}/ - Update a city.
     - DELETE /cities/{id}/ - Delete a city.
     """
@@ -104,12 +107,16 @@ class CityViewSet(viewsets.ModelViewSet):
 class AirlineViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing airlines.
-    - GET /airlines/ - List airlines (uses AirlineListSerializer, supports ?country= filter).
-    - GET /airlines/{id}/ - Retrieve airline details (uses AirlineDetailSerializer with airplanes_count).
-    - POST /airlines/ - Create a new airline (uses AirlineSerializer).
+    - GET /airlines/ - List airlines
+    (uses AirlineListSerializer, supports ?country= filter).
+    - GET /airlines/{id}/ - Retrieve airline details
+    (uses AirlineDetailSerializer with airplanes_count).
+    - POST /airlines/ - Create a new airline
+    (uses AirlineSerializer).
     - PUT/PATCH /airlines/{id}/ - Update an airline.
     - DELETE /airlines/{id}/ - Delete an airline.
-    - POST /airlines/{id}/upload-image/ - Upload logo (admin only, uses AirlineLogoSerializer).
+    - POST /airlines/{id}/upload-image/ - Upload logo
+    (admin only, uses AirlineLogoSerializer).
     """
 
     queryset = Airline.objects.select_related("country")
@@ -171,9 +178,12 @@ class AirlineViewSet(viewsets.ModelViewSet):
 class AirportViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing airports.
-    - GET /airports/ - List airports (uses AirportListSerializer with city and country names).
-    - GET /airports/{id}/ - Retrieve airport details (uses AirportDetailSerializer with nested city data).
-    - POST /airports/ - Create a new airport (uses AirportSerializer, requires city ID).
+    - GET /airports/ - List airports
+    (uses AirportListSerializer with city and country names).
+    - GET /airports/{id}/ - Retrieve airport details
+    (uses AirportDetailSerializer with nested city data).
+    - POST /airports/ - Create a new airport
+    (uses AirportSerializer, requires city ID).
     - PUT/PATCH /airports/{id}/ - Update an airport.
     - DELETE /airports/{id}/ - Delete an airport.
     """
@@ -267,9 +277,12 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 class AirplaneViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing airplanes.
-    - GET /airplanes/ - List airplanes (uses AirplaneListSerializer with names).
-    - GET /airplanes/{id}/ - Retrieve airplane details (uses AirplaneDetailSerializer with nested data).
-    - POST /airplanes/ - Create a new airplane (uses AirplaneSerializer, requires IDs).
+    - GET /airplanes/ - List airplanes
+    (uses AirplaneListSerializer with names).
+    - GET /airplanes/{id}/ - Retrieve airplane details
+    (uses AirplaneDetailSerializer with nested data).
+    - POST /airplanes/ - Create a new airplane
+    (uses AirplaneSerializer, requires IDs).
     - PUT/PATCH /airplanes/{id}/ - Update an airplane.
     - DELETE /airplanes/{id}/ - Delete an airplane.
     """
@@ -293,9 +306,13 @@ class AirplaneViewSet(viewsets.ModelViewSet):
 class GateViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing gates.
-    - GET /gates/ - List gates (uses GateListSerializer, supports ?airport_name= and ?terminal_suffix= filters).
-    - GET /gates/{id}/ - Retrieve gate details (uses GateDetailSerializer with nested terminal and airport data).
-    - POST /gates/ - Create a new gate (uses GateSerializer, requires terminal ID).
+    - GET /gates/ - List gates (
+    uses GateListSerializer, supports
+    ?airport_name= and ?terminal_suffix= filters).
+    - GET /gates/{id}/ - Retrieve gate details
+    (uses GateDetailSerializer with nested terminal and airport data).
+    - POST /gates/ - Create a new gate
+    (uses GateSerializer, requires terminal ID).
     - PUT/PATCH /gates/{id}/ - Update a gate.
     - DELETE /gates/{id}/ - Delete a gate.
     """
@@ -318,9 +335,13 @@ class GateViewSet(viewsets.ModelViewSet):
         airport_name = self.request.query_params.get("airport_name")
         terminal_suffix = self.request.query_params.get("terminal_suffix")
         if airport_name:
-            queryset = queryset.filter(terminal__airport__name__icontains=airport_name)
+            queryset = queryset.filter(
+                terminal__airport__name__icontains=airport_name
+            )
         if terminal_suffix:
-            queryset = queryset.filter(terminal__name__iendswith=terminal_suffix)
+            queryset = queryset.filter(
+                terminal__name__iendswith=terminal_suffix
+            )
 
         return queryset.distinct()
 
@@ -329,12 +350,14 @@ class GateViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "airport_name",
                 type=OpenApiTypes.STR,
-                description="Filter by airports name (ex. ?airport_name=Boryspil)",
+                description="Filter by airports name "
+                            "(ex. ?airport_name=Boryspil)",
             ),
             OpenApiParameter(
                 "terminal_suffix",
                 type=OpenApiTypes.STR,
-                description="Filter by and of terminals name (ex. ?terminal_suffix=A)",
+                description="Filter by and of terminals name "
+                            "(ex. ?terminal_suffix=A)",
             ),
         ]
     )
@@ -345,9 +368,12 @@ class GateViewSet(viewsets.ModelViewSet):
 class TerminalViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing terminals.
-    - GET /terminals/ - List terminals (uses TerminalListSerializer, supports ?airport_name= filter).
-    - GET /terminals/{id}/ - Retrieve terminal details (uses TerminalDetailSerializer).
-    - POST /terminals/ - Create a new terminal (uses TerminalSerializer, requires airport ID).
+    - GET /terminals/ - List terminals
+    (uses TerminalListSerializer, supports ?airport_name= filter).
+    - GET /terminals/{id}/ - Retrieve terminal details
+    (uses TerminalDetailSerializer).
+    - POST /terminals/ - Create a new terminal
+    (uses TerminalSerializer, requires airport ID).
     - PUT/PATCH /terminals/{id}/ - Update a terminal.
     - DELETE /terminals/{id}/ - Delete a terminal.
     """
@@ -371,7 +397,9 @@ class TerminalViewSet(viewsets.ModelViewSet):
 
         airport_name = self.request.query_params.get("airport_name")
         if airport_name:
-            queryset = queryset.filter(airport__name__icontains=airport_name)
+            queryset = queryset.filter(
+                airport__name__icontains=airport_name
+            )
 
         return queryset.distinct()
 
@@ -380,7 +408,8 @@ class TerminalViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "airport_name",
                 type=OpenApiTypes.STR,
-                description="Filter by airports name (ex. ?airport_name=Boryspil)",
+                description="Filter by airports name "
+                            "(ex. ?airport_name=Boryspil)",
             ),
         ]
     )
@@ -391,15 +420,18 @@ class TerminalViewSet(viewsets.ModelViewSet):
 class RouteViewSet(viewsets.ModelViewSet):
     """
     Endpoints:
-        - GET /routes/ - List all routes with optional filtering by source or destination name.
+        - GET /routes/ - List all routes with optional filtering
+        by source or destination name.
         - GET /routes/{id}/ - Retrieve details of a specific route.
-        - POST /routes/ - Create a new route (requires source and destination airport IDs).
+        - POST /routes/ - Create a new route
+        (requires source and destination airport IDs).
         - PUT /routes/{id}/ - Update an existing route.
         - PATCH /routes/{id}/ - Partially update an existing route.
         - DELETE /routes/{id}/ - Delete a route.
 
     Query Parameters:
-        - source_name (str): Filter routes by source airport name (e.g., ?source_name=Boryspil).
+        - source_name (str): Filter routes by source airport name
+        (e.g., ?source_name=Boryspil).
         - destination_name (str): Filter routes by destination airport name
           (e.g., ?destination_name=Berlin).
     """
@@ -429,10 +461,14 @@ class RouteViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if source_name:
-            queryset = queryset.filter(source__name__icontains=source_name)
+            queryset = queryset.filter(
+                source__name__icontains=source_name
+            )
 
         if destination_name:
-            queryset = queryset.filter(destination__name__icontains=destination_name)
+            queryset = queryset.filter(
+                destination__name__icontains=destination_name
+            )
 
         return queryset.distinct()
 
@@ -441,12 +477,14 @@ class RouteViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "source_name",
                 type=OpenApiTypes.STR,
-                description="Filter by source name (ex. ?source_name=Boryspil)",
+                description="Filter by source name "
+                            "(ex. ?source_name=Boryspil)",
             ),
             OpenApiParameter(
                 "destination_name",
                 type=OpenApiTypes.STR,
-                description="Filter by destination name (ex. ?destination_name=Berlin Brandenburg Airport)",
+                description="Filter by destination name ("
+                            "ex.?destination_name=Berlin Brandenburg Airport)",
             ),
         ]
     )
@@ -457,7 +495,8 @@ class RouteViewSet(viewsets.ModelViewSet):
 class FlightViewSet(viewsets.ModelViewSet):
     """
     Endpoints:
-        - GET /flights/ - List all flights with optional filtering by departure or arrival airport
+        - GET /flights/ - List all flights
+        with optional filtering by departure or arrival airport
         and min_price, flight_num.
         - GET /flights/{id}/ - Retrieve details of a specific flight.
         - POST /flights/ - Create a new flight.
@@ -487,7 +526,9 @@ class FlightViewSet(viewsets.ModelViewSet):
         "arrival_gate__terminal__airport",
     ).annotate(
         tickets_available=(
-                F("airplane__rows") * F("airplane__seats_in_row") - Count("tickets")
+                F("airplane__rows") *
+                F("airplane__seats_in_row") -
+                Count("tickets")
         ),
         airplane_capacity=F("airplane__rows") * F("airplane__seats_in_row")
     ).order_by("id")
@@ -512,17 +553,23 @@ class FlightViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if departure:
-            queryset = queryset.filter(route__source__name__icontains=departure)
+            queryset = queryset.filter(
+                route__source__name__icontains=departure
+            )
 
         if arrival:
-            queryset = queryset.filter(route__destination__name__icontains=arrival)
+            queryset = queryset.filter(
+                route__destination__name__icontains=arrival
+            )
 
         if min_price:
             price_val = Decimal(min_price)
             queryset = queryset.filter(price__gte=price_val)
 
         if flight_num:
-            queryset = queryset.filter(flight_number__iexact=flight_num)
+            queryset = queryset.filter(
+                flight_number__iexact=flight_num
+            )
 
         return queryset.order_by("id").distinct()
 
@@ -531,22 +578,26 @@ class FlightViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "departure",
                 type=OpenApiTypes.STR,
-                description="Filter by departure airport name (ex. ?departure=Boryspil)",
+                description="Filter by departure airport name "
+                            "(ex. ?departure=Boryspil)",
             ),
             OpenApiParameter(
                 "arrival",
                 type=OpenApiTypes.STR,
-                description="Filter by arrival airport name (ex. ?arrival=Zhuliany)",
+                description="Filter by arrival airport name "
+                            "(ex. ?arrival=Zhuliany)",
             ),
             OpenApiParameter(
                 "min_price",
                 type=OpenApiTypes.STR,
-                description="Filter by destination name (ex. ?min_price=4000)",
+                description="Filter by destination name "
+                            "(ex. ?min_price=4000)",
             ),
             OpenApiParameter(
                 "flight_num",
                 type=OpenApiTypes.STR,
-                description="Filter by destination name (ex. ?flight_num=101)",
+                description="Filter by destination name "
+                            "(ex. ?flight_num=101)",
             ),
         ]
     )
@@ -604,7 +655,10 @@ class CrewViewSet(viewsets.ModelViewSet):
         try:
             return [int(str_id) for str_id in qs.split(",") if str_id.strip()]
         except ValueError:
-            raise serializers.ValidationError({"flights": "Invalid flight IDs. Must be comma-separated integers."})
+            raise serializers.ValidationError(
+                {"flights": "Invalid flight IDs. "
+                            "Must be comma-separated integers."}
+            )
 
     def get_serializer_class(self):
         """Overrides the serializer depending on the action."""
@@ -644,7 +698,6 @@ class CrewViewSet(viewsets.ModelViewSet):
         """
         instance = serializer.save()
         return instance
-
 
     @extend_schema(
         parameters=[
@@ -718,9 +771,11 @@ class OrderViewSet(ModelViewSet):
 
     def get_object(self):
         """
-        This method queries the database to retrieve an order instance for updating,
+        This method queries the database to
+        retrieve an order instance for updating,
         that caches the order instance,
-        to avoid repeated database queries within a single request-response cycle.
+        to avoid repeated database queries within
+        a single request-response cycle.
         """
 
         if hasattr(self, "_cached_instance"):

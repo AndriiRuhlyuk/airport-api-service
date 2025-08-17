@@ -13,6 +13,7 @@ from airport.serializers import CitySerializer, CityDetailSerializer
 
 CITY_URL = reverse("airport:city-list")
 
+
 def sample_country(**params) -> Country:
     defaults = {
         "name": "Testland",
@@ -21,6 +22,7 @@ def sample_country(**params) -> Country:
     }
     defaults.update(params)
     return Country.objects.create(**defaults)
+
 
 def sample_city(*, country: Optional[Country] = None, **params) -> City:
     if country is None:
@@ -34,6 +36,7 @@ def sample_city(*, country: Optional[Country] = None, **params) -> City:
     }
     defaults.update(params)
     return City.objects.create(**defaults)
+
 
 def detail_url(city_id: int):
     return reverse("airport:city-detail", args=[city_id])
@@ -63,7 +66,7 @@ class AuthenticatedAirportApiTests(TestCase):
         res = self.client.get(CITY_URL)
 
         cities = City.objects.all()
-        serializer = CitySerializer (cities, many=True)
+        serializer = CitySerializer(cities, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["results"], serializer.data)
@@ -106,7 +109,10 @@ class AdminCityApiTests(TestCase):
     @patch("airport.serializers.Nominatim.geocode")
     def test_create_city(self, geocode_mock):
         country = sample_country()
-        geocode_mock.return_value = SimpleNamespace(latitude=0.888, longitude=0.888)
+        geocode_mock.return_value = SimpleNamespace(
+            latitude=0.888,
+            longitude=0.888
+        )
         payload = {
             "name": "Test City",
             "country": country.name,

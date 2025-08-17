@@ -10,10 +10,14 @@ from rest_framework.test import APIClient
 from typing import Optional
 
 from airport.models import Country, Airline
-from airport.serializers import AirlineDetailSerializer, AirlineListSerializer
+from airport.serializers import (
+    AirlineDetailSerializer,
+    AirlineListSerializer
+)
 
 
 AIRLINE_URL = reverse("airport:airline-list")
+
 
 def sample_country(**params) -> Country:
     """Sample country object."""
@@ -26,7 +30,12 @@ def sample_country(**params) -> Country:
     defaults.update(params)
     return Country.objects.create(**defaults)
 
-def sample_airline(*, country: Optional[Country] = None, **params) -> Airline:
+
+def sample_airline(
+        *,
+        country: Optional[Country] = None,
+        **params
+) -> Airline:
     """Sample airline object."""
 
     if country is None:
@@ -41,13 +50,21 @@ def sample_airline(*, country: Optional[Country] = None, **params) -> Airline:
     defaults.update(params)
     return Airline.objects.create(**defaults)
 
+
 def detail_url(airline_id: int):
     """Return the detail URL"""
-    return reverse("airport:airline-detail", args=[airline_id])
+    return reverse(
+        "airport:airline-detail",
+        args=[airline_id]
+    )
+
 
 def image_upload_url(airline_id):
     """Return URL for recipe image upload"""
-    return reverse("airport:airline-upload-image", args=[airline_id])
+    return reverse(
+        "airport:airline-upload-image",
+        args=[airline_id]
+    )
 
 
 class AirlineImageUploadTests(TestCase):

@@ -1,5 +1,6 @@
 from datetime import timedelta, date
-import random, string
+import random
+import string
 from decimal import Decimal
 from uuid import uuid4
 
@@ -28,11 +29,14 @@ from airport.models import (
 from airport.serializers import FlightDetailSerializer, FlightListSerializer
 from airport.views import FlightViewSet
 
+
 FLIGHT_URL = reverse("airport:flight-list")
+
 
 def _rand_letters(k: int) -> str:
     """Generate a random string of length k"""
     return "".join(random.choices(string.ascii_uppercase, k=k))
+
 
 def _unique_code(model, field: str, k: int) -> str:
     """Generate a random string of length k"""
@@ -41,8 +45,10 @@ def _unique_code(model, field: str, k: int) -> str:
         if not model.objects.filter(**{field: code}).exists():
             return code
 
+
 def uniq(prefix: str) -> str:
     return f"{prefix}-{uuid4().hex[:6].upper()}"
+
 
 def sample_country(**params) -> Country:
     """Sample country object."""
@@ -54,6 +60,7 @@ def sample_country(**params) -> Country:
     }
     defaults.update(params)
     return Country.objects.create(**defaults)
+
 
 def sample_city(
         *,
@@ -74,6 +81,7 @@ def sample_city(
     defaults.update(params)
     return City.objects.create(**defaults)
 
+
 def sample_airport(
         *,
         city: Optional[City] = None,
@@ -84,11 +92,18 @@ def sample_airport(
     defaults = {
         "name": "Test Airport",
         "closest_big_city": city,
-        "iata_code": params.pop("iata_code", _unique_code(Airport, "iata_code", 3)),
-        "icao_code": params.pop("icao_code", _unique_code(Airport, "icao_code", 4)),
+        "iata_code": params.pop(
+            "iata_code",
+            _unique_code(Airport, "iata_code", 3)
+        ),
+        "icao_code": params.pop(
+            "icao_code",
+            _unique_code(Airport, "icao_code", 4)
+        ),
     }
     defaults.update(params)
     return Airport.objects.create(**defaults)
+
 
 def sample_airline(
         *,
@@ -109,6 +124,7 @@ def sample_airline(
     defaults.update(params)
     return Airline.objects.create(**defaults)
 
+
 def sample_airplane_type(**params) -> AirplaneType:
     """Sample airplane type object."""
 
@@ -118,6 +134,7 @@ def sample_airplane_type(**params) -> AirplaneType:
     }
     defaults.update(params)
     return AirplaneType.objects.create(**defaults)
+
 
 def sample_airplane(
         *,
@@ -140,7 +157,8 @@ def sample_airplane(
         "is_active": True,
     }
     defaults.update(params)
-    return  Airplane.objects.create(**defaults)
+    return Airplane.objects.create(**defaults)
+
 
 def sample_route(
         *,
@@ -164,6 +182,7 @@ def sample_route(
     defaults.update(params)
     return Route.objects.create(**defaults)
 
+
 def sample_terminal(
         *,
         airport: Optional[Airport] = None,
@@ -182,6 +201,7 @@ def sample_terminal(
     defaults.update(params)
     return Terminal.objects.create(**defaults)
 
+
 def sample_gate(
         *,
         terminal: Optional[Terminal] = None,
@@ -199,6 +219,7 @@ def sample_gate(
     defaults.update(params)
     return Gate.objects.create(**defaults)
 
+
 def sample_flight_status(**params) -> FlightStatus:
     """Sample flight status object."""
     defaults = {
@@ -209,10 +230,11 @@ def sample_flight_status(**params) -> FlightStatus:
     defaults.update(params)
     return FlightStatus.objects.create(**defaults)
 
+
 def sample_flight(
         *,
         route: Optional[Route] = None,
-        airplane:Optional[Airplane] = None,
+        airplane: Optional[Airplane] = None,
         departure_gate: Optional[Gate] = None,
         arrival_gate: Optional[Gate] = None,
         status_f: Optional[FlightStatus] = None,
@@ -231,8 +253,13 @@ def sample_flight(
     if status_f is None:
         status_f = sample_flight_status()
 
-    departure = params.pop("departure_time", timezone.now())
-    arrival = params.pop("arrival_time", departure + timedelta(days=1))
+    departure = params.pop(
+        "departure_time",
+        timezone.now()
+    )
+    arrival = params.pop(
+        "arrival_time", departure + timedelta(days=1)
+    )
 
     defaults = {
         "route": route,
@@ -247,6 +274,7 @@ def sample_flight(
     }
     defaults.update(params)
     return Flight.objects.create(**defaults)
+
 
 def detail_url(airline_id: int):
     """Return the detail URL"""
@@ -347,11 +375,26 @@ class FlightFiltersApiTests(TestCase):
 
         country_uk = sample_country(name="United Kingdom")
         country_br = sample_country(name="Brazil")
-        city_london = sample_city(country=country_uk, name="London")
-        city_rio = sample_city(country=country_br, name="Rio")
-        airport_lon = sample_airport(closest_big_city=city_london, name="London Airport")
-        airport_rio = sample_airport(closest_big_city=city_rio, name="Rio Airport")
-        route_london_rio = sample_route(source=airport_lon, destination=airport_rio)
+        city_london = sample_city(
+            country=country_uk,
+            name="London"
+        )
+        city_rio = sample_city(
+            country=country_br,
+            name="Rio"
+        )
+        airport_lon = sample_airport(
+            closest_big_city=city_london,
+            name="London Airport"
+        )
+        airport_rio = sample_airport(
+            closest_big_city=city_rio,
+            name="Rio Airport"
+        )
+        route_london_rio = sample_route(
+            source=airport_lon,
+            destination=airport_rio
+        )
         plane1 = sample_airplane(name="Boeing LON-RIO")
         self.flight1 = sample_flight(
             flight_number="UK100",
@@ -364,11 +407,26 @@ class FlightFiltersApiTests(TestCase):
 
         country_usa = sample_country(name="USA")
         country_ua = sample_country(name="Ukraine")
-        city_new_york = sample_city(country=country_usa, name="New York")
-        city_kyiv = sample_city(country=country_ua, name="Kyiv")
-        airport_new_york = sample_airport(closest_big_city=city_new_york, name="NewYork Airport")
-        airport_kyiv = sample_airport(closest_big_city=city_kyiv, name="Kyiv Airport")
-        route_new_york_kyiv = sample_route(source=airport_new_york, destination=airport_kyiv)
+        city_new_york = sample_city(
+            country=country_usa,
+            name="New York"
+        )
+        city_kyiv = sample_city(
+            country=country_ua,
+            name="Kyiv"
+        )
+        airport_new_york = sample_airport(
+            closest_big_city=city_new_york,
+            name="NewYork Airport"
+        )
+        airport_kyiv = sample_airport(
+            closest_big_city=city_kyiv,
+            name="Kyiv Airport"
+        )
+        route_new_york_kyiv = sample_route(
+            source=airport_new_york,
+            destination=airport_kyiv
+        )
         plane2 = sample_airplane(name="Airbus NY-KY")
         self.flight2 = sample_flight(
             flight_number="US500",
@@ -381,11 +439,23 @@ class FlightFiltersApiTests(TestCase):
 
         country_kenya = sample_country(name="Kenya")
         country_norway = sample_country(name="Norway")
-        city_nairobi = sample_city(country=country_kenya, name="Nairobi")
+        city_nairobi = sample_city(
+            country=country_kenya,
+            name="Nairobi"
+        )
         city_oslo = sample_city(country=country_norway, name="Oslo")
-        airport_nb = sample_airport(closest_big_city=city_nairobi, name="Nairobi Airport")
-        airport_os = sample_airport(closest_big_city=city_oslo, name="Oslo Airport")
-        route_nairobi_oslo = sample_route(source=airport_nb, destination=airport_os)
+        airport_nb = sample_airport(
+            closest_big_city=city_nairobi,
+            name="Nairobi Airport"
+        )
+        airport_os = sample_airport(
+            closest_big_city=city_oslo,
+            name="Oslo Airport"
+        )
+        route_nairobi_oslo = sample_route(
+            source=airport_nb,
+            destination=airport_os
+        )
         plane3 = sample_airplane(name="Boeing NB-OS")
         self.flight3 = sample_flight(
             flight_number="KE150",
@@ -399,13 +469,19 @@ class FlightFiltersApiTests(TestCase):
     def _expected(self, **filters):
         qs = FlightViewSet.queryset
         if "departure" in filters:
-            qs = qs.filter(route__source__name__icontains=filters["departure"])
+            qs = qs.filter(
+                route__source__name__icontains=filters["departure"]
+            )
         if "arrival" in filters:
-            qs = qs.filter(route__destination__name__icontains=filters["arrival"])
+            qs = qs.filter(
+                route__destination__name__icontains=filters["arrival"]
+            )
         if "min_price" in filters:
             qs = qs.filter(price__gte=Decimal(filters["min_price"]))
         if "flight_num" in filters:
-            qs = qs.filter(flight_number__iexact=filters["flight_num"])
+            qs = qs.filter(
+                flight_number__iexact=filters["flight_num"]
+            )
         qs = qs.order_by("id").distinct()
         return FlightListSerializer(qs, many=True).data
 
@@ -428,13 +504,19 @@ class FlightFiltersApiTests(TestCase):
         self.assertEqual(res.data["results"], expected)
 
     def test_filter_by_flight_num_case_insensitive(self):
-        res = self.client.get(FLIGHT_URL, {"flight_num": "uk100"})
+        res = self.client.get(
+            FLIGHT_URL,
+            {"flight_num": "uk100"}
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         expected = self._expected(flight_num="uk100")
         self.assertEqual(res.data["results"], expected)
 
     def test_filter_combined(self):
-        res = self.client.get(FLIGHT_URL, {"departure": "new", "min_price": "4000"})
+        res = self.client.get(
+            FLIGHT_URL,
+            {"departure": "new", "min_price": "4000"}
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         expected = self._expected(departure="new", min_price="4000")
         self.assertEqual(res.data["results"], expected)
@@ -459,9 +541,18 @@ class AdminFlightApiTests(TestCase):
         country2 = sample_country(name="Brazil")
         city1 = sample_city(country=country1, name="London")
         city2 = sample_city(country=country2, name="Rio")
-        airport1 = sample_airport(closest_big_city=city1, name="London Airport")
-        airport2 = sample_airport(closest_big_city=city2, name="Rio Airport")
-        route = sample_route(source=airport1, destination=airport2)
+        airport1 = sample_airport(
+            closest_big_city=city1,
+            name="London Airport"
+        )
+        airport2 = sample_airport(
+            closest_big_city=city2,
+            name="Rio Airport"
+        )
+        route = sample_route(
+            source=airport1,
+            destination=airport2
+        )
         airplane = sample_airplane(name="boeing777")
         departure = timezone.now()
         arrival = departure + timedelta(days=1)

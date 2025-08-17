@@ -1,4 +1,5 @@
-import random, string
+import random
+import string
 from uuid import uuid4
 from datetime import date
 
@@ -15,14 +16,19 @@ from airport.models import (
     Airport,
     Terminal,
 )
-from airport.serializers import  TerminalListSerializer, TerminalDetailSerializer
+from airport.serializers import (
+    TerminalListSerializer,
+    TerminalDetailSerializer
+)
 from airport.views import TerminalViewSet
 
 TERMINAL_URL = reverse("airport:terminal-list")
 
+
 def _rand_letters(k: int) -> str:
     """Generate a random string of length k"""
     return "".join(random.choices(string.ascii_uppercase, k=k))
+
 
 def _unique_code(model, field: str, k: int) -> str:
     """Generate a random string of length k"""
@@ -31,8 +37,10 @@ def _unique_code(model, field: str, k: int) -> str:
         if not model.objects.filter(**{field: code}).exists():
             return code
 
+
 def uniq(prefix: str) -> str:
     return f"{prefix}-{uuid4().hex[:6].upper()}"
+
 
 def sample_country(**params) -> Country:
     """Sample country object."""
@@ -45,6 +53,7 @@ def sample_country(**params) -> Country:
     }
     defaults.update(params)
     return Country.objects.create(**defaults)
+
 
 def sample_city(
         *,
@@ -65,6 +74,7 @@ def sample_city(
     defaults.update(params)
     return City.objects.create(**defaults)
 
+
 def sample_airport(
         *,
         city: Optional[City] = None,
@@ -77,11 +87,20 @@ def sample_airport(
     defaults = {
         "name": "Test Airport",
         "closest_big_city": city,
-        "iata_code": params.pop("iata_code", _unique_code(Airport, "iata_code", 3)),
-        "icao_code": params.pop("icao_code", _unique_code(Airport, "icao_code", 4)),
+        "iata_code": params.pop(
+            "iata_code", _unique_code(
+                Airport, "iata_code", 3
+            )
+        ),
+        "icao_code": params.pop(
+            "icao_code", _unique_code(
+                Airport, "icao_code", 4
+            )
+        ),
     }
     defaults.update(params)
     return Airport.objects.create(**defaults)
+
 
 def sample_terminal(
         *,
@@ -102,6 +121,7 @@ def sample_terminal(
     }
     defaults.update(params)
     return Terminal.objects.create(**defaults)
+
 
 def detail_url(terminal_id: int):
     """Return the detail URL"""
@@ -175,8 +195,14 @@ class AuthenticatedTerminalApiTests(TestCase):
         country2 = sample_country(name="Brazil")
         city1 = sample_city(country=country1, name="London")
         city2 = sample_city(country=country2, name="Rio")
-        airport1 = sample_airport(closest_big_city=city1, name="London International Airport")
-        airport2 = sample_airport(closest_big_city=city2, name="Rio Great Airport")
+        airport1 = sample_airport(
+            closest_big_city=city1,
+            name="London International Airport"
+        )
+        airport2 = sample_airport(
+            closest_big_city=city2,
+            name="Rio Great Airport"
+        )
 
         terminal1 = sample_terminal(
             name="Terminal A",

@@ -10,6 +10,7 @@ from airport.serializers import CountrySerializer
 
 COUNTRY_URL = reverse("airport:country-list")
 
+
 def sample_country(**params) -> Country:
     defaults = {
         "name": "Testland",
@@ -18,6 +19,7 @@ def sample_country(**params) -> Country:
     }
     defaults.update(params)
     return Country.objects.create(**defaults)
+
 
 def detail_url(country_id: int):
     return reverse("airport:country-detail", args=[country_id])

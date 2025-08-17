@@ -11,7 +11,6 @@ from rest_framework.exceptions import ValidationError
 from user.models import User
 
 
-
 class Country(models.Model):
     """Country model"""
 
@@ -56,7 +55,8 @@ def airline_logo_path(
         filename: str
 ) -> pathlib.Path:
     filename = (
-        f"{slugify(instance.code)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
+        f"{slugify(instance.code)}-"
+        f"{uuid.uuid4()}" + pathlib.Path(filename).suffix
     )
     return pathlib.Path("upload/airline/") / pathlib.Path(filename)
 
@@ -115,9 +115,15 @@ class FlightStatus(models.Model):
         ("DIVERTED", "Diverted"),
     ]
 
-    name = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    name = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES
+    )
     description = models.TextField(blank=True)
-    color_code = models.CharField(max_length=7, blank=True)  # HEX color #FF0000
+    color_code = models.CharField(
+        max_length=7,
+        blank=True
+    )
 
     class Meta:
         verbose_name_plural = "flight statuses"
@@ -131,16 +137,21 @@ class Terminal(models.Model):
 
     name = models.CharField(max_length=50)
     airport = models.ForeignKey(
-        "Airport", on_delete=models.CASCADE, related_name="terminals"
+        "Airport",
+        on_delete=models.CASCADE,
+        related_name="terminals"
     )
-    capacity = models.PositiveIntegerField(help_text="Max passengers q-ty per hour")
+    capacity = models.PositiveIntegerField(
+        help_text="Max passengers q-ty per hour"
+    )
     is_international = models.BooleanField(default=False)
     opened_date = models.DateField(null=True, blank=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "airport"], name="unique_terminal_airport"
+                fields=["name", "airport"],
+                name="unique_terminal_airport"
             ),
         ]
         ordering = ("name",)
@@ -150,7 +161,10 @@ class Terminal(models.Model):
         STR method for fix N+1 problem in POST Form
         """
 
-        if hasattr(self, "_prefetched_objects_cache") or hasattr(self, "airport"):
+        if hasattr(
+                self,
+                "_prefetched_objects_cache"
+        ) or hasattr(self, "airport"):
             try:
                 return f"{self.airport.name} – {self.name}"
             except:
@@ -194,24 +208,39 @@ class Gate(models.Model):
 
     @staticmethod
     def validate_gate_type(terminal, gate_type):
-        """Validate gate type based on terminal's international status"""
+        """
+        Validate gate type based
+        on terminal's international status
+        """
 
-        if terminal.is_international and gate_type not in ["INTERNATIONAL", "MIXED"]:
+        if terminal.is_international and gate_type not in [
+            "INTERNATIONAL",
+            "MIXED"
+        ]:
             raise ValidationError(
                 {
-                    "gate_type": "International terminal can only have INTERNATIONAL or MIXED gates."
+                    "gate_type": "International terminal can "
+                                 "only have INTERNATIONAL or MIXED gates."
                 }
             )
 
-        if not terminal.is_international and gate_type not in ["DOMESTIC", "MIXED"]:
+        if not terminal.is_international and gate_type not in [
+            "DOMESTIC",
+            "MIXED"
+        ]:
             raise ValidationError(
                 {
-                    "gate_type": "Domestic terminal can only have DOMESTIC or MIXED gates."
+                    "gate_type": "Domestic terminal can only "
+                                 "have DOMESTIC or MIXED gates."
                 }
             )
 
     def clean(self):
-        """Run field-level validation and call external gate_type validation"""
+        """
+        Run field-level validation and call
+        external gate_type validation
+         """
+
         super().clean()
 
         if self.terminal and self.gate_type:
@@ -226,7 +255,7 @@ class Gate(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.terminal.airport.name} - {self.terminal.name}"
+        return f"{self.terminal.airport.name} - {self.terminal.name} - {self.number}"
 
 
 class Route(models.Model):
@@ -258,7 +287,8 @@ class Route(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Automatically calculate the distance based on the closest big city for each airport.
+        Automatically calculate the distance
+         based on the closest big city for each airport.
         """
 
         city_source = getattr(self.source, "closest_big_city", None)
@@ -268,18 +298,30 @@ class Route(models.Model):
                 or not city_source.longitude or not city_destination.latitude
                 or not city_destination.longitude):
             raise ValueError(
-                "Cannot calculate distance: missing coordinates for source or destination city."
+                "Cannot calculate distance: missing "
+                "coordinates for source or destination city."
             )
 
-        coords_source = (city_source.latitude, city_source.longitude)
-        coords_destination = (city_destination.latitude, city_destination.longitude)
+        coords_source = (
+            city_source.latitude,
+            city_source.longitude
+        )
+        coords_destination = (
+            city_destination.latitude,
+            city_destination.longitude
+        )
 
-        self.distance = round(geodesic(coords_source, coords_destination).km)
+        self.distance = round(geodesic(
+            coords_source,
+            coords_destination
+        ).km)
 
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.source.name} -> {self.destination.name} ({self.distance}) km"
+        return (f"{self.source.name} -"
+                f"> {self.destination.name} "
+                f"({self.distance}) km")
 
 
 def airplane_type_image_path(
@@ -287,7 +329,8 @@ def airplane_type_image_path(
         filename: str
 ) -> pathlib.Path:
     filename = (
-        f"{slugify(instance.name)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
+        f"{slugify(instance.name)}"
+        f"-{uuid.uuid4()}" + pathlib.Path(filename).suffix
     )
     return pathlib.Path("upload/airplane_types/") / pathlib.Path(filename)
 
@@ -383,7 +426,8 @@ class Flight(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.flight_number}: {self.route.source.name} -> {self.route.destination.name} ({self.flight_time}h)"
+        return (f"{self.flight_number}: {self.route.source.name} "
+                f"-> {self.route.destination.name} ({self.flight_time}h)")
 
 
 class Crew(models.Model):
@@ -404,15 +448,28 @@ class Order(models.Model):
     """Order model"""
 
     created_at = models.DateTimeField(auto_now_add=True)
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="orders")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    flight = models.ForeignKey(
+        Flight,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="orders"
+    )
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Order #{self.id} - {self.user.email} ({self.created_at.date()})"
+        return (f"Order #{self.id} - {self.user.email} "
+                f"({self.created_at.date()})")
 
 
 class Ticket(models.Model):
@@ -420,14 +477,31 @@ class Ticket(models.Model):
 
     row = models.IntegerField(validators=[MinValueValidator(1)])
     seat = models.IntegerField(validators=[MinValueValidator(1)])
-    flight = models.ForeignKey(Flight, on_delete=models.CASCADE, related_name="tickets")
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets")
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    flight = models.ForeignKey(
+        Flight,
+        on_delete=models.CASCADE,
+        related_name="tickets"
+    )
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="tickets"
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True
+    )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["row", "seat", "flight"], name="unique_ticket_row_seat_flight"
+                fields=[
+                    "row",
+                    "seat",
+                    "flight"
+                ],
+                name="unique_ticket_row_seat_flight"
             ),
         ]
         ordering = ["seat", "row"]
@@ -452,11 +526,24 @@ class Ticket(models.Model):
         if not self.flight_id:
             return
         airplane = self.flight.airplane
-        Ticket.validate_seat(self.seat, airplane.seats_in_row, ValidationError)
-        Ticket.validate_row(self.row, airplane.rows, ValidationError)
+        Ticket.validate_seat(
+            self.seat,
+            airplane.seats_in_row,
+            ValidationError
+        )
+        Ticket.validate_row(
+            self.row,
+            airplane.rows,
+            ValidationError
+        )
 
-        if hasattr(self.order, "flight_id") and self.order.flight_id and self.order.flight_id != self.flight_id:
-            raise ValidationError({"order": "Order.flight should be equal Ticket.flight."})
+        if hasattr(
+                self.order,
+                "flight_id"
+        ) and self.order.flight_id and self.order.flight_id != self.flight_id:
+            raise ValidationError(
+                {"order": "Order.flight should be equal Ticket.flight."}
+            )
 
     def save(
             self,
@@ -472,4 +559,5 @@ class Ticket(models.Model):
         )
 
     def __str__(self):
-        return f"Ticket {self.flight.flight_number} - Row {self.row}, Seat {self.seat}"
+        return (f"Ticket {self.flight.flight_number} -"
+                f" Row {self.row}, Seat {self.seat}")

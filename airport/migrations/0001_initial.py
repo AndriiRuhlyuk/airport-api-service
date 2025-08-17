@@ -28,8 +28,14 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(max_length=100, unique=True)),
-                ("code", models.CharField(max_length=10, unique=True)),
+                ("name", models.CharField(
+                    max_length=100,
+                    unique=True
+                )),
+                ("code", models.CharField(
+                    max_length=10,
+                    unique=True
+                )),
                 (
                     "founded_year",
                     models.PositiveIntegerField(
@@ -44,7 +50,8 @@ class Migration(migrations.Migration):
                 (
                     "logo",
                     models.ImageField(
-                        null=True, upload_to=airport.models.airline_logo_path
+                        null=True,
+                        upload_to=airport.models.airline_logo_path
                     ),
                 ),
                 ("is_active", models.BooleanField(default=True)),
@@ -62,12 +69,19 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(max_length=100, unique=True)),
-                ("manufacturer", models.CharField(blank=True, max_length=100)),
+                ("name", models.CharField(
+                    max_length=100,
+                    unique=True
+                )),
+                ("manufacturer", models.CharField(
+                    blank=True,
+                    max_length=100
+                )),
                 (
                     "image",
                     models.ImageField(
-                        null=True, upload_to=airport.models.airplane_type_image_path
+                        null=True,
+                        upload_to=airport.models.airplane_type_image_path
                     ),
                 ),
             ],
@@ -88,7 +102,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("name", models.CharField(max_length=100)),
-                ("population", models.PositiveIntegerField(blank=True, null=True)),
+                ("population", models.PositiveIntegerField(
+                    blank=True,
+                    null=True
+                )),
             ],
             options={
                 "verbose_name_plural": "cities",
@@ -190,17 +207,29 @@ class Migration(migrations.Migration):
                 (
                     "rows",
                     models.IntegerField(
-                        validators=[django.core.validators.MinValueValidator(1)]
+                        validators=[
+                            django.core.validators.MinValueValidator(1)
+                        ]
                     ),
                 ),
                 (
                     "seats_in_row",
                     models.IntegerField(
-                        validators=[django.core.validators.MinValueValidator(1)]
+                        validators=[
+                            django.core.validators.MinValueValidator(1)
+                        ]
                     ),
                 ),
-                ("registration_number", models.CharField(max_length=20, unique=True)),
-                ("is_active", models.BooleanField(default=True)),
+                (
+                    "registration_number",
+                    models.CharField(
+                        max_length=20,
+                        unique=True
+                    )),
+                (
+                    "is_active",
+                    models.BooleanField(default=True)
+                ),
                 (
                     "airline",
                     models.ForeignKey(
@@ -235,8 +264,16 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("name", models.CharField(max_length=100)),
-                ("iata_code", models.CharField(blank=True, max_length=3, unique=True)),
-                ("icao_code", models.CharField(blank=True, max_length=4, unique=True)),
+                ("iata_code", models.CharField(
+                    blank=True,
+                    max_length=3,
+                    unique=True
+                )),
+                ("icao_code", models.CharField(
+                    blank=True,
+                    max_length=4,
+                    unique=True
+                )),
                 (
                     "closest_big_city",
                     models.ForeignKey(
@@ -345,7 +382,10 @@ class Migration(migrations.Migration):
                 ),
                 ("first_name", models.CharField(max_length=100)),
                 ("last_name", models.CharField(max_length=100)),
-                ("flights", models.ManyToManyField(blank=True, to="airport.flight")),
+                (
+                    "flights",
+                    models.ManyToManyField(blank=True, to="airport.flight")
+                ),
             ],
             options={
                 "verbose_name_plural": "crews",
@@ -366,12 +406,17 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "total_price",
-                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=10
+                    ),
                 ),
                 (
                     "flight",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="airport.flight"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="airport.flight"
                     ),
                 ),
                 (
@@ -482,31 +527,40 @@ class Migration(migrations.Migration):
                 (
                     "row",
                     models.IntegerField(
-                        validators=[django.core.validators.MinValueValidator(1)]
+                        validators=[
+                            django.core.validators.MinValueValidator(1)
+                        ]
                     ),
                 ),
                 (
                     "seat",
                     models.IntegerField(
-                        validators=[django.core.validators.MinValueValidator(1)]
+                        validators=[
+                            django.core.validators.MinValueValidator(1)
+                        ]
                     ),
                 ),
                 (
                     "price",
                     models.DecimalField(
-                        blank=True, decimal_places=2, max_digits=10, null=True
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True
                     ),
                 ),
                 (
                     "flight",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="airport.flight"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="airport.flight"
                     ),
                 ),
                 (
                     "order",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="airport.order"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="airport.order"
                     ),
                 ),
             ],
@@ -517,25 +571,31 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="city",
             constraint=models.UniqueConstraint(
-                fields=("name", "country"), name="unique_city_country"
+                fields=("name", "country"),
+                name="unique_city_country"
             ),
         ),
         migrations.AddIndex(
             model_name="route",
             index=models.Index(
-                fields=["source", "destination"], name="airport_rou_source__5c8f4c_idx"
+                fields=["source", "destination"],
+                name="airport_rou_source__5c8f4c_idx"
             ),
         ),
         migrations.AddConstraint(
             model_name="route",
             constraint=models.UniqueConstraint(
-                fields=("source", "destination"), name="unique_route"
+                fields=("source", "destination"),
+                name="unique_route"
             ),
         ),
         migrations.AddConstraint(
             model_name="route",
             constraint=models.CheckConstraint(
-                condition=models.Q(("source", models.F("destination")), _negated=True),
+                condition=models.Q((
+                    "source",
+                    models.F("destination")),
+                    _negated=True),
                 name="different_airports",
             ),
         ),
@@ -549,26 +609,32 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="flight",
             constraint=models.CheckConstraint(
-                condition=models.Q(("departure_time__lt", models.F("arrival_time"))),
+                condition=models.Q((
+                    "departure_time__lt",
+                    models.F("arrival_time")
+                )),
                 name="departure_before_arrival",
             ),
         ),
         migrations.AddConstraint(
             model_name="terminal",
             constraint=models.UniqueConstraint(
-                fields=("name", "airport"), name="unique_terminal_airport"
+                fields=("name", "airport"),
+                name="unique_terminal_airport"
             ),
         ),
         migrations.AddConstraint(
             model_name="gate",
             constraint=models.UniqueConstraint(
-                fields=("number", "terminal"), name="unique_gate_terminal"
+                fields=("number", "terminal"),
+                name="unique_gate_terminal"
             ),
         ),
         migrations.AddConstraint(
             model_name="ticket",
             constraint=models.UniqueConstraint(
-                fields=("row", "seat", "flight"), name="unique_ticket_row_seat_flight"
+                fields=("row", "seat", "flight"),
+                name="unique_ticket_row_seat_flight"
             ),
         ),
     ]

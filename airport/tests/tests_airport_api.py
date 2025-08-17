@@ -7,11 +7,20 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 from typing import Optional
 
-from airport.models import Airport, Country, City, Terminal
-from airport.serializers import AirportListSerializer, AirportDetailSerializer
+from airport.models import (
+    Airport,
+    Country,
+    City,
+    Terminal
+)
+from airport.serializers import (
+    AirportListSerializer,
+    AirportDetailSerializer
+)
 
 
 AIRPORT_URL = reverse("airport:airport-list")
+
 
 def sample_country(**params) -> Country:
     defaults = {
@@ -22,7 +31,12 @@ def sample_country(**params) -> Country:
     defaults.update(params)
     return Country.objects.create(**defaults)
 
-def sample_city(*, country: Optional[Country] = None, **params) -> City:
+
+def sample_city(
+        *,
+        country: Optional[Country] = None,
+        **params
+) -> City:
     if country is None:
         country = sample_country()
     defaults = {
@@ -35,7 +49,12 @@ def sample_city(*, country: Optional[Country] = None, **params) -> City:
     defaults.update(params)
     return City.objects.create(**defaults)
 
-def sample_airport(*, city: Optional[City] = None, **params) -> Airport:
+
+def sample_airport(
+        *,
+        city: Optional[City] = None,
+        **params
+) -> Airport:
     if city is None:
         city = sample_city()
     defaults = {
@@ -47,7 +66,12 @@ def sample_airport(*, city: Optional[City] = None, **params) -> Airport:
     defaults.update(params)
     return Airport.objects.create(**defaults)
 
-def sample_terminals(*, airport: Optional[Airport] = None, **params) -> Terminal:
+
+def sample_terminals(
+        *,
+        airport: Optional[Airport] = None,
+        **params
+) -> Terminal:
     if airport is None:
         airport = sample_airport()
     defaults = {
@@ -60,8 +84,12 @@ def sample_terminals(*, airport: Optional[Airport] = None, **params) -> Terminal
     defaults.update(params)
     return Terminal.objects.create(**defaults)
 
+
 def detail_url(airport_id: int):
-    return reverse("airport:airport-detail", args=[airport_id])
+    return reverse(
+        "airport:airport-detail",
+        args=[airport_id]
+    )
 
 
 class UnauthenticatedAirportApiTests(TestCase):
@@ -112,7 +140,7 @@ class AuthenticatedAirportApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
-        self.assertEqual(res.data["terminals_count"],2)
+        self.assertEqual(res.data["terminals_count"], 2)
 
     def test_create_airport_forbidden(self):
         city = sample_city()

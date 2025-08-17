@@ -1,5 +1,6 @@
 import json
-import random, string
+import random
+import string
 from uuid import uuid4
 from datetime import date
 
@@ -30,14 +31,20 @@ from airport.models import (
     Gate,
     FlightStatus
 )
-from airport.serializers import OrderListSerializer, OrderDetailSerializer
+from airport.serializers import (
+    OrderListSerializer,
+    OrderDetailSerializer
+)
+
 
 ORDER_URL = reverse("airport:order-list")
+
 
 def _rand_letters(k: int) -> str:
     """Generate a random string of length k"""
 
     return "".join(random.choices(string.ascii_uppercase, k=k))
+
 
 def _unique_code(model, field: str, k: int) -> str:
     """Generate a random string of length k"""
@@ -46,8 +53,10 @@ def _unique_code(model, field: str, k: int) -> str:
         if not model.objects.filter(**{field: code}).exists():
             return code
 
+
 def uniq(prefix: str) -> str:
     return f"{prefix}-{uuid4().hex[:6].upper()}"
+
 
 def sample_country(**params) -> Country:
     """Sample country object."""
@@ -60,6 +69,7 @@ def sample_country(**params) -> Country:
     }
     defaults.update(params)
     return Country.objects.create(**defaults)
+
 
 def sample_city(
         *,
@@ -74,11 +84,18 @@ def sample_city(
         "name": params.pop("name", uniq("City")),
         "country": country,
         "population": 1000,
-        "latitude": params.pop("latitude", 50.0 + random.uniform(-1, 1)),
-        "longitude": params.pop("longitude", 30.0 + random.uniform(-1, 1))
+        "latitude": params.pop(
+            "latitude",
+            50.0 + random.uniform(-1, 1)
+        ),
+        "longitude": params.pop(
+            "longitude",
+            30.0 + random.uniform(-1, 1)
+        )
     }
     defaults.update(params)
     return City.objects.create(**defaults)
+
 
 def sample_airport(
         *,
@@ -92,11 +109,18 @@ def sample_airport(
     defaults = {
         "name": "Test Airport",
         "closest_big_city": city,
-        "iata_code": params.pop("iata_code", _unique_code(Airport, "iata_code", 3)),
-        "icao_code": params.pop("icao_code", _unique_code(Airport, "icao_code", 4)),
+        "iata_code": params.pop(
+            "iata_code",
+            _unique_code(Airport, "iata_code", 3)
+        ),
+        "icao_code": params.pop(
+            "icao_code",
+            _unique_code(Airport, "icao_code", 4)
+        ),
     }
     defaults.update(params)
     return Airport.objects.create(**defaults)
+
 
 def sample_airline(
         *,
@@ -117,6 +141,7 @@ def sample_airline(
     defaults.update(params)
     return Airline.objects.create(**defaults)
 
+
 def sample_airplane_type(**params) -> AirplaneType:
     """Sample airplane type object."""
 
@@ -126,6 +151,7 @@ def sample_airplane_type(**params) -> AirplaneType:
     }
     defaults.update(params)
     return AirplaneType.objects.create(**defaults)
+
 
 def sample_airplane(
         *,
@@ -149,7 +175,8 @@ def sample_airplane(
         "is_active": True,
     }
     defaults.update(params)
-    return  Airplane.objects.create(**defaults)
+    return Airplane.objects.create(**defaults)
+
 
 def sample_route(
         *,
@@ -173,6 +200,7 @@ def sample_route(
     defaults.update(params)
     return Route.objects.create(**defaults)
 
+
 def sample_terminal(
         *,
         airport: Optional[Airport] = None,
@@ -192,6 +220,7 @@ def sample_terminal(
     defaults.update(params)
     return Terminal.objects.create(**defaults)
 
+
 def sample_gate(
         *,
         terminal: Optional[Terminal] = None,
@@ -210,6 +239,7 @@ def sample_gate(
     defaults.update(params)
     return Gate.objects.create(**defaults)
 
+
 def sample_flight_status(**params) -> FlightStatus:
     """Sample flight status object."""
 
@@ -221,10 +251,11 @@ def sample_flight_status(**params) -> FlightStatus:
     defaults.update(params)
     return FlightStatus.objects.create(**defaults)
 
+
 def sample_flight(
         *,
         route: Optional[Route] = None,
-        airplane:Optional[Airplane] = None,
+        airplane: Optional[Airplane] = None,
         departure_gate: Optional[Gate] = None,
         arrival_gate: Optional[Gate] = None,
         status_f: Optional[FlightStatus] = None,
@@ -259,6 +290,7 @@ def sample_flight(
     }
     defaults.update(params)
     return Flight.objects.create(**defaults)
+
 
 def order_detail_url(pk: int):
     return reverse("airport:order-detail", args=[pk])
@@ -301,18 +333,27 @@ class AuthenticatedOrderApiTests(TestCase):
 
     def test_create_order_success(self):
         payload = self._make_order_payload(
-            self.flight, [{"row": 1, "seat": 1}, {"row": 1, "seat": 2}]
+            self.flight,
+            [{"row": 1, "seat": 1}, {"row": 1, "seat": 2}]
         )
 
         res = self.client.post(ORDER_URL, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
         order_id = res.data["id"]
 
-        order = Order.objects.select_related("flight").prefetch_related("tickets").get(pk=order_id)
+        order = Order.objects.select_related(
+            "flight"
+        ).prefetch_related("tickets").get(pk=order_id)
         self.assertEqual(order.user_id, self.user.id)
         self.assertEqual(order.total_price, self.flight.price * 2)
-        self.assertEqual(sorted((ticket_o.row, ticket_o.seat) for ticket_o in order.tickets.all()),
-                         [(1, 1), (1, 2)])
+        self.assertEqual(
+            sorted(
+                (
+                    ticket_o.row,
+                    ticket_o.seat
+                ) for ticket_o in order.tickets.all()
+                   ),
+            [(1, 1), (1, 2)])
 
     def test_create_order_conflict_with_taken_seat(self):
         first = self.client.post(
@@ -322,7 +363,11 @@ class AuthenticatedOrderApiTests(TestCase):
                 [{"row": 2, "seat": 1}]),
             format="json",
         )
-        self.assertEqual(first.status_code, status.HTTP_201_CREATED, first.data)
+        self.assertEqual(
+            first.status_code,
+            status.HTTP_201_CREATED,
+            first.data
+        )
 
         res = self.client.post(
             ORDER_URL,
@@ -331,13 +376,20 @@ class AuthenticatedOrderApiTests(TestCase):
                 [{"row": 2, "seat": 1}]),
             format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, res.data)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_400_BAD_REQUEST,
+            res.data
+        )
         self.assertIn("tickets", res.data)
 
     def test_list_shows_only_own_orders(self):
         mine = self.client.post(
             ORDER_URL,
-            self._make_order_payload(self.flight, [{"row": 1, "seat": 1}]),
+            self._make_order_payload(
+                self.flight,
+                [{"row": 1, "seat": 1}]
+            ),
             format="json",
         )
         self.assertEqual(mine.status_code, status.HTTP_201_CREATED, mine.data)
@@ -367,7 +419,11 @@ class AuthenticatedOrderApiTests(TestCase):
 
         expected_qs = (
             Order.objects
-            .select_related("flight__route__source", "flight__route__destination", "user")
+            .select_related(
+                "flight__route__source",
+                "flight__route__destination",
+                "user"
+            )
             .prefetch_related("tickets")
             .filter(user=self.user)
             .order_by("id")
@@ -391,16 +447,23 @@ class AuthenticatedOrderApiTests(TestCase):
             .select_related(
                 "flight__route__source",
                 "flight__route__destination",
-                "user").prefetch_related(
-                Prefetch("tickets",
-                queryset=Ticket.objects.select_related(
-                    "flight",
-                    "flight__route",
-                    "flight__route__source",
-                    "flight__route__destination"
-                ).order_by("row", "seat")
-                         )
-            ).get(pk=order_id)
+                "user")
+            .prefetch_related(
+                Prefetch(
+                    "tickets",
+                    queryset=Ticket.objects.select_related(
+                        "flight",
+                        "flight__route",
+                        "flight__route__source",
+                        "flight__route__destination"
+                    )
+                    .order_by(
+                        "row",
+                        "seat"
+                    )
+                )
+            )
+            .get(pk=order_id)
         )
         self.assertEqual(res.data, OrderDetailSerializer(expected_obj).data)
 
@@ -409,10 +472,16 @@ class AuthenticatedOrderApiTests(TestCase):
             email="other2@test.test", password="pass12345"
         )
         order = Order.objects.create(
-            user=other_user, flight=self.flight, total_price=self.flight.price
+            user=other_user,
+            flight=self.flight,
+            total_price=self.flight.price
         )
         Ticket.objects.create(
-            order=order, flight=self.flight, row=9, seat=9, price=self.flight.price
+            order=order,
+            flight=self.flight,
+            row=9,
+            seat=9,
+            price=self.flight.price
         )
 
         res = self.client.get(order_detail_url(order.id))
@@ -438,7 +507,10 @@ class AuthenticatedOrderApiTests(TestCase):
 
         res_create = self.client.post(
             ORDER_URL,
-            self._make_order_payload(self.flight, [{"row": 3, "seat": 3}]),
+            self._make_order_payload(
+                self.flight,
+                [{"row": 3, "seat": 3}]
+            ),
             format="json",
         )
         oid = res_create.data["id"]
@@ -472,13 +544,37 @@ class AdminOrderApiTests(TestCase):
         )
         dep = timezone.now() + timedelta(hours=1)
         arr = dep + timedelta(hours=2)
-        self.flight = sample_flight(departure_time=dep, arrival_time=arr, price=Decimal("99.00"))
+        self.flight = sample_flight(
+            departure_time=dep,
+            arrival_time=arr,
+            price=Decimal("99.00")
+        )
 
-        self.order1 = Order.objects.create(user=self.user1, flight=self.flight, total_price=self.flight.price)
-        Ticket.objects.create(order=self.order1, flight=self.flight, row=1, seat=1, price=self.flight.price)
+        self.order1 = Order.objects.create(
+            user=self.user1,
+            flight=self.flight,
+            total_price=self.flight.price
+        )
+        Ticket.objects.create(
+            order=self.order1,
+            flight=self.flight,
+            row=1,
+            seat=1,
+            price=self.flight.price
+        )
 
-        self.order2 = Order.objects.create(user=self.user2, flight=self.flight, total_price=self.flight.price)
-        Ticket.objects.create(order=self.order2, flight=self.flight, row=2, seat=2, price=self.flight.price)
+        self.order2 = Order.objects.create(
+            user=self.user2,
+            flight=self.flight,
+            total_price=self.flight.price
+        )
+        Ticket.objects.create(
+            order=self.order2,
+            flight=self.flight,
+            row=2,
+            seat=2,
+            price=self.flight.price
+        )
 
     def test_admin_can_list_all_orders(self):
         """Test that admin can see list all orders"""
@@ -487,11 +583,18 @@ class AdminOrderApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         expected_qs = (
             Order.objects
-            .select_related("flight__route__source", "flight__route__destination", "user")
+            .select_related(
+                "flight__route__source",
+                "flight__route__destination",
+                "user"
+            )
             .prefetch_related("tickets")
             .order_by("id")
         )
-        self.assertEqual(res.data["results"], OrderListSerializer(expected_qs, many=True).data)
+        self.assertEqual(
+            res.data["results"],
+            OrderListSerializer(expected_qs, many=True).data
+        )
 
     def test_admin_can_retrieve_any_order(self):
         """Test that admin can see detail a specific any order"""
@@ -501,7 +604,11 @@ class AdminOrderApiTests(TestCase):
 
         expected_obj = (
             Order.objects
-            .select_related("flight__route__source", "flight__route__destination", "user")
+            .select_related(
+                "flight__route__source",
+                "flight__route__destination",
+                "user"
+            )
             .prefetch_related(
                 Prefetch(
                     "tickets",

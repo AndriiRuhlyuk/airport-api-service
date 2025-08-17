@@ -173,10 +173,3 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
 }
-
-if DEBUG:
-    INTERNAL_IPS = ["*"]
-    DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda request: True,
-    }
-    print("🐛 DEBUG TOOLBAR ENABLED")

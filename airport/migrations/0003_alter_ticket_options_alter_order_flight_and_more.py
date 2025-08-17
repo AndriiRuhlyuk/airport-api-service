@@ -8,14 +8,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("airport", "0002_alter_airline_options_alter_airplane_options_and_more"),
+        (
+            "airport",
+            "0002_alter_airline_options_alter_airplane_options_and_more"
+        ),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterModelOptions(
             name="ticket",
-            options={"ordering": ["seat", "row"], "verbose_name_plural": "tickets"},
+            options={
+                "ordering": ["seat", "row"],
+                "verbose_name_plural": "tickets"
+            },
         ),
         migrations.AlterField(
             model_name="order",

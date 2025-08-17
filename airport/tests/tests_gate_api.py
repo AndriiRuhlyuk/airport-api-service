@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
@@ -7,11 +6,21 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 from typing import Optional
 
-from airport.models import Airport, Country, City, Terminal, Gate
-from airport.serializers import GateListSerializer, GateDetailSerializer
+from airport.models import (
+    Airport,
+    Country,
+    City,
+    Terminal,
+    Gate
+)
+from airport.serializers import (
+    GateListSerializer,
+    GateDetailSerializer
+)
 
 
 GATE_URL = reverse("airport:gate-list")
+
 
 def sample_country(**params) -> Country:
     defaults = {
@@ -22,7 +31,12 @@ def sample_country(**params) -> Country:
     defaults.update(params)
     return Country.objects.create(**defaults)
 
-def sample_city(*, country: Optional[Country] = None, **params) -> City:
+
+def sample_city(
+        *,
+        country: Optional[Country] = None,
+        **params
+) -> City:
     if country is None:
         country = sample_country()
     defaults = {
@@ -35,7 +49,12 @@ def sample_city(*, country: Optional[Country] = None, **params) -> City:
     defaults.update(params)
     return City.objects.create(**defaults)
 
-def sample_airport(*, city: Optional[City] = None, **params) -> Airport:
+
+def sample_airport(
+        *,
+        city: Optional[City] = None,
+        **params
+) -> Airport:
     if city is None:
         city = sample_city()
     defaults = {
@@ -47,7 +66,12 @@ def sample_airport(*, city: Optional[City] = None, **params) -> Airport:
     defaults.update(params)
     return Airport.objects.create(**defaults)
 
-def sample_terminal(*, airport: Optional[Airport] = None, **params) -> Terminal:
+
+def sample_terminal(
+        *,
+        airport: Optional[Airport] = None,
+        **params
+) -> Terminal:
     if airport is None:
         airport = sample_airport()
     defaults = {
@@ -60,6 +84,7 @@ def sample_terminal(*, airport: Optional[Airport] = None, **params) -> Terminal:
     defaults.update(params)
     return Terminal.objects.create(**defaults)
 
+
 def sample_gate(*, terminal: Optional[Terminal] = None, **params) -> Terminal:
     if terminal is None:
         terminal = sample_terminal()
@@ -71,6 +96,7 @@ def sample_gate(*, terminal: Optional[Terminal] = None, **params) -> Terminal:
     }
     defaults.update(params)
     return Gate.objects.create(**defaults)
+
 
 def detail_url(gate_id: int):
     return reverse("airport:gate-detail", args=[gate_id])

@@ -1,5 +1,3 @@
-# import io
-# from django.core.files.uploadedfile import SimpleUploadedFile
 import tempfile
 
 from PIL import Image
@@ -11,11 +9,20 @@ from rest_framework.test import APIClient
 from typing import Optional
 from django.db.models import F
 
-from airport.models import AirplaneType, Airline, Airplane, Country
-from airport.serializers import AirplaneDetailSerializer, AirplaneListSerializer
+from airport.models import (
+    AirplaneType,
+    Airline,
+    Airplane,
+    Country
+)
+from airport.serializers import (
+    AirplaneDetailSerializer,
+    AirplaneListSerializer
+)
 
 
 AIRPLANE_URL = reverse("airport:airplane-list")
+
 
 def sample_country(**params) -> Country:
     """Sample country object."""
@@ -28,7 +35,12 @@ def sample_country(**params) -> Country:
     defaults.update(params)
     return Country.objects.create(**defaults)
 
-def sample_airline(*, country: Optional[Country] = None, **params) -> Airline:
+
+def sample_airline(
+        *,
+        country: Optional[Country] = None,
+        **params
+) -> Airline:
     """Sample airline object."""
 
     if country is None:
@@ -43,6 +55,7 @@ def sample_airline(*, country: Optional[Country] = None, **params) -> Airline:
     defaults.update(params)
     return Airline.objects.create(**defaults)
 
+
 def sample_airplane_type(**params) -> AirplaneType:
     """Sample airplane type object."""
 
@@ -52,6 +65,7 @@ def sample_airplane_type(**params) -> AirplaneType:
     }
     defaults.update(params)
     return AirplaneType.objects.create(**defaults)
+
 
 def sample_airplane(
         *,
@@ -74,15 +88,23 @@ def sample_airplane(
         "is_active": True,
     }
     defaults.update(params)
-    return  Airplane.objects.create(**defaults)
+    return Airplane.objects.create(**defaults)
+
 
 def detail_url(airline_id: int):
     """Return the detail URL"""
-    return reverse("airport:airplane-detail", args=[airline_id])
+    return reverse(
+        "airport:airplane-detail",
+        args=[airline_id]
+    )
+
 
 def image_upload_url(airplane_type_id: int):
     """Return URL for recipe image upload"""
-    return reverse("airport:airplanetype-upload-image", args=[airplane_type_id])
+    return reverse(
+        "airport:airplanetype-upload-image",
+        args=[airplane_type_id]
+    )
 
 
 class AirplaneImageShowTests(TestCase):
@@ -103,7 +125,11 @@ class AirplaneImageShowTests(TestCase):
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
             ntf.seek(0)
-            res = self.client.post(url, {"image": ntf}, format="multipart")
+            res = self.client.post(
+                url,
+                {"image": ntf},
+                format="multipart"
+            )
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.airplane_type.refresh_from_db()
 
@@ -125,7 +151,10 @@ class AirplaneImageShowTests(TestCase):
         res = self.client.get(AIRPLANE_URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-        results = res.data["results"] if isinstance(res.data, dict) else res.data
+        results = res.data["results"] if isinstance(
+            res.data,
+            dict
+        ) else res.data
         item = next(x for x in results if x["id"] == self.airplane.id)
 
         self.assertIsInstance(item["airplane_type"], str)
@@ -223,7 +252,10 @@ class AdminAirlineApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-        fk_map = {"airline": "airline_id", "airplane_type": "airplane_type_id"}
+        fk_map = {
+            "airline": "airline_id",
+            "airplane_type": "airplane_type_id"
+        }
         for key, val in payload.items():
             model_attr = fk_map.get(key, key)
             self.assertEqual(getattr(airplane, model_attr), val)

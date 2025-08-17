@@ -92,9 +92,13 @@ class CitySerializer(serializers.ModelSerializer):
                 )
 
         except GeocoderTimedOut:
-            raise serializers.ValidationError("The geocoding service timed out. Please try again.")
+            raise serializers.ValidationError(
+                "The geocoding service timed out. Please try again."
+            )
         except Exception as e:
-            raise serializers.ValidationError(f"An error occurred during geocoding: {e}")
+            raise serializers.ValidationError(
+                f"An error occurred during geocoding: {e}"
+            )
 
 
 class CityDetailSerializer(CitySerializer):
@@ -112,7 +116,15 @@ class AirlineSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Airline
-        fields = ("id", "name", "code", "country", "founded_year", "logo", "is_active")
+        fields = (
+            "id",
+            "name",
+            "code",
+            "country",
+            "founded_year",
+            "logo",
+            "is_active"
+        )
 
 
 class AirlineListSerializer(AirlineSerializer):
@@ -376,8 +388,14 @@ class GateSerializer(serializers.ModelSerializer):
 class GateListSerializer(GateSerializer):
     """Gate list serializer"""
 
-    terminal_name = serializers.CharField(source="terminal.name", read_only=True)
-    airport_name = serializers.CharField(source="terminal.airport.name", read_only=True)
+    terminal_name = serializers.CharField(
+        source="terminal.name",
+        read_only=True
+    )
+    airport_name = serializers.CharField(
+        source="terminal.airport.name",
+        read_only=True
+    )
 
     class Meta:
         model = Gate
@@ -416,6 +434,7 @@ AIRPORT_QUERYSET = Airport.objects.select_related(
     "closest_big_city__country"
 )
 
+
 class RouteSerializer(serializers.ModelSerializer):
     """
     Base Route serializer with fields:
@@ -441,8 +460,7 @@ class RouteSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         """
         Initial method for RouteSerializer.
-        Generate dynamic data and pass actual choices for dields
-
+        Generate dynamic data and pass actual choices for fields
         """
         super().__init__(*args, **kwargs)
 
@@ -466,7 +484,8 @@ class RouteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Convert airport IDs obtained from fields into full-fledged Airport model objects.
+        Convert airport IDs obtained
+         from fields into full-fledged Airport model objects.
         Uses optimized constant queryset for efficient searching.
         Create a Route object with already correct data.
         """
@@ -497,9 +516,15 @@ class RouteSerializer(serializers.ModelSerializer):
                 if str(airport.pk) in [src_id, dst_id]
             }
             if src_id:
-                instance.source = airports.get(src_id, Airport.objects.get(pk=int(src_id)))
+                instance.source = airports.get(
+                    src_id,
+                    Airport.objects.get(pk=int(src_id))
+                )
             if dst_id:
-                instance.destination = airports.get(dst_id, Airport.objects.get(pk=int(dst_id)))
+                instance.destination = airports.get(
+                    dst_id,
+                    Airport.objects.get(pk=int(dst_id))
+                )
 
         for attr, val in validated_data.items():
             setattr(instance, attr, val)
@@ -511,8 +536,14 @@ class RouteSerializer(serializers.ModelSerializer):
 class RouteListSerializer(serializers.ModelSerializer):
     """Route list serializer"""
 
-    source_name = serializers.CharField(source="source.name", read_only=True)
-    destination_name = serializers.CharField(source="destination.name", read_only=True)
+    source_name = serializers.CharField(
+        source="source.name",
+        read_only=True
+    )
+    destination_name = serializers.CharField(
+        source="destination.name",
+        read_only=True
+    )
     read_only_fields = ("distance",)
 
     class Meta:
@@ -569,29 +600,37 @@ class FlightStatusCreateSerializer(FlightStatusSerializer):
 
 # This creates an optimized queryset to avoid N+1 queries later
 GATE_QUERYSET = Gate.objects.select_related("terminal__airport")
-# This creates a static list of choices for the create form dropdowns
-GATE_CHOICES = [(str(gate.pk), str(gate)) for gate in GATE_QUERYSET]
 
 
 class FlightSerializer(serializers.ModelSerializer):
     """
-    Base serializer for CREATING flights. Uses RepresentationChoiceField
-    for optimized query to Gate model by BrowsableAPIRenderer.
-    Validation unique fields ('flight_number', 'departure_time')
+    Base serializer for CREATING
+    flights. Uses RepresentationChoiceField
+    for optimized query to
+    Gate model by BrowsableAPIRenderer.
+    Validation unique fields
+    ('flight_number', 'departure_time')
     """
+
     route = serializers.PrimaryKeyRelatedField(
-        queryset=Route.objects.select_related("source", "destination")
+        queryset=Route.objects.select_related(
+            "source",
+            "destination"
+        )
     )
     airplane = serializers.PrimaryKeyRelatedField(
-        queryset=Airplane.objects.select_related("airplane_type", "airline")
+        queryset=Airplane.objects.select_related(
+            "airplane_type",
+            "airline"
+        )
     )
     departure_gate = RepresentationChoiceField(
-        choices=GATE_CHOICES,
+        choices=[],
         allow_null=True,
         required=False
     )
     arrival_gate = RepresentationChoiceField(
-        choices=GATE_CHOICES,
+        choices=[],
         allow_null=True,
         required=False
     )
@@ -624,6 +663,16 @@ class FlightSerializer(serializers.ModelSerializer):
             )
         ]
 
+    def __init__(self, *args, **kwargs):
+        """
+        Initial method for FlightSerializer.
+        Generate dynamic data and pass actual choices for gate fields.
+        """
+        super().__init__(*args, **kwargs)
+        self.gate_choices = [(str(gate.pk), str(gate)) for gate in GATE_QUERYSET]
+        self.fields["departure_gate"].choices = self.gate_choices
+        self.fields["arrival_gate"].choices = self.gate_choices
+
     def validate(self, attrs):
         """Validate that departure time < arrival time"""
 
@@ -645,15 +694,22 @@ class FlightSerializer(serializers.ModelSerializer):
 
         gates = {str(gate.pk): gate for gate in GATE_QUERYSET}
         if departure_gate_id:
-            validated_data["departure_gate"] = gates.get(departure_gate_id, Gate.objects.get(pk=departure_gate_id))
+            validated_data["departure_gate"] = gates.get(
+                departure_gate_id,
+                Gate.objects.get(pk=departure_gate_id)
+            )
         if arrival_gate_id:
-            validated_data["arrival_gate"] = gates.get(arrival_gate_id, Gate.objects.get(pk=arrival_gate_id))
+            validated_data["arrival_gate"] = gates.get(
+                arrival_gate_id,
+                Gate.objects.get(pk=arrival_gate_id)
+            )
 
         flight = super().create(validated_data)
 
         if status_data:
             with transaction.atomic():
-                flight_status, created = FlightStatus.objects.select_for_update().get_or_create(
+                flight_status, created = FlightStatus.objects.select_for_update(
+                ).get_or_create(
                     name=status_data["name"],
                     defaults=status_data
                 )
@@ -697,6 +753,7 @@ class FlightUpdateSerializer(serializers.ModelSerializer):
     A dedicated serializer for UPDATING flights.
     It uses standard fields to correctly populate the HTML form from instance
     """
+
     route = serializers.PrimaryKeyRelatedField(
         queryset=Route.objects.select_related("source", "destination")
     )
@@ -705,19 +762,18 @@ class FlightUpdateSerializer(serializers.ModelSerializer):
     )
     departure_gate = OptimizedRelatedField(
         queryset=GATE_QUERYSET,
-        choices=GATE_CHOICES,
+        choices=[],
         allow_null=True,
         required=False
     )
     arrival_gate = OptimizedRelatedField(
         queryset=GATE_QUERYSET,
-        choices=GATE_CHOICES,
+        choices=[],
         allow_null=True,
         required=False
     )
 
     status = FlightStatusCreateSerializer(required=False)
-
 
     class Meta:
         model = Flight
@@ -741,8 +797,9 @@ class FlightUpdateSerializer(serializers.ModelSerializer):
 
         status_data = validated_data.pop("status", None)
         if status_data:
-            with transaction.atomic():
-                flight_status, created = FlightStatus.objects.select_for_update().get_or_create(
+            with (transaction.atomic()):
+                flight_status, created = FlightStatus.objects.select_for_update(
+                ).get_or_create(
                     name=status_data.get("name"),
                     defaults=status_data
                 )
@@ -752,9 +809,14 @@ class FlightUpdateSerializer(serializers.ModelSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
-    """Base Ticket Serializer for validating a single ticket's data"""
+    """Base Ticket Serializer for
+    validating a single ticket's data"""
 
-    price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
 
     class Meta:
         model = Ticket
@@ -773,10 +835,20 @@ class TicketSerializer(serializers.ModelSerializer):
         flight = self.context.get("flight")
         if not flight:
 
-            raise Exception("Error: 'flight' not passed tp context TicketSerializer.")
+            raise Exception(
+                "Error: 'flight' not passed tp context TicketSerializer."
+            )
 
-        Ticket.validate_row(row, flight.airplane.rows, serializers.ValidationError)
-        Ticket.validate_seat(seat, flight.airplane.seats_in_row, serializers.ValidationError)
+        Ticket.validate_row(
+            row,
+            flight.airplane.rows,
+            serializers.ValidationError
+        )
+        Ticket.validate_seat(
+            seat,
+            flight.airplane.seats_in_row,
+            serializers.ValidationError
+        )
 
         attrs["price"] = flight.price
         return attrs
@@ -815,7 +887,8 @@ class FlightDetailSerializer(serializers.ModelSerializer):
         )
 
     def get_taken_seats(self, obj):
-        """Return a list of tuples (row, seat) for all taken seats in the flight."""
+        """Return a list of tuples (row, seat)
+        for all taken seats in the flight."""
         taken = obj.tickets.values_list("row", "seat")
         return list(taken)
 
@@ -898,6 +971,7 @@ class CrewDetailSerializer(serializers.ModelSerializer):
     """Crew detail serializer"""
 
     flights = FlightListSerializer(many=True, read_only=True)
+
     class Meta:
         model = Crew
         fields = (
@@ -919,7 +993,10 @@ class CustomTicketField(serializers.ListField):
     def __init__(self, *args, **kwargs):
         """Pass default style for browsable API"""
 
-        kwargs["style"] = kwargs.get("style", {"base_template": "textarea.html"})
+        kwargs["style"] = kwargs.get(
+            "style",
+            {"base_template": "textarea.html"}
+        )
         kwargs["allow_empty"] = kwargs.get("allow_empty", False)
         super().__init__(*args, **kwargs)
 
@@ -929,38 +1006,53 @@ class CustomTicketField(serializers.ListField):
         """
 
         json_string = None
-        if isinstance(data, list) and len(data) == 1 and isinstance(data[0], str):
+        if isinstance(
+                data,
+                list
+        ) and len(data) == 1 and isinstance(data[0], str):
             json_string = data[0]
         else:
             raise serializers.ValidationError(
-                "Unexpected data format. Try sending tickets as a list JSON."
+                "Unexpected data format. "
+                "Try sending tickets as a list JSON."
             )
 
         try:
             ticket_list = json.loads(json_string)
         except json.JSONDecodeError:
             raise serializers.ValidationError(
-                "The string is not valid JSON. Check that all quotes are double quotes. (\")."
+                "The string is not valid JSON. "
+                "Check that all quotes are double quotes. (\")."
             )
 
         if not isinstance(ticket_list, list):
-            raise serializers.ValidationError("The JSON should contain a list of tickets.")
+            raise serializers.ValidationError(
+                "The JSON should contain a list of tickets."
+            )
 
         validated_data = []
         for ticket_item in ticket_list:
             if not isinstance(ticket_item, dict):
-                raise serializers.ValidationError(f"Element '{ticket_item}' in list is not a dict.")
+                raise serializers.ValidationError(f"Element '{ticket_item}' "
+                                                  f"in list is not a dict.")
 
-            child_serializer = self.child.__class__(data=ticket_item, context=self.context)
+            child_serializer = self.child.__class__(
+                data=ticket_item,
+                context=self.context
+            )
             child_serializer.is_valid(raise_exception=True)
             validated_data.append(child_serializer.validated_data)
 
         return validated_data
 
     def to_representation(self, value):
-        """Converts a queryset of Ticket instances into a simple list of dictionaries for output.
-        `value` here is the associated manager (e.g. order.tickets)."""
-        return [{"row": item.row, "seat": item.seat} for item in value.all()]
+        """Converts a queryset of Ticket
+        instances into a simple list of dictionaries for output.
+        `value` here is the associated manager
+        (e.g. order.tickets)."""
+        return [{
+            "row": item.row, "seat": item.seat
+        } for item in value.all()]
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -971,10 +1063,13 @@ class OrderSerializer(serializers.ModelSerializer):
     tickets = CustomTicketField(
         child=TicketSerializer(),
         allow_empty=False,
-        help_text="Введіть квитки як JSON-список з подвійними лапками: "
+        help_text="Write tickets in JSON-list format with double quotes: "
                   "[{\"row\": 5, \"seat\": 2}, {\"row\": 5, \"seat\": 3}]"
     )
-    flight_name = serializers.CharField(source="flight.route", read_only=True)
+    flight_name = serializers.CharField(
+        source="flight.route",
+        read_only=True
+    )
     flight = CustomPrimaryKeyRelatedField(
         queryset=Flight.objects.all(),
         write_only=True,
@@ -1005,7 +1100,8 @@ class OrderSerializer(serializers.ModelSerializer):
             seat_key = (ticket_data["row"], ticket_data["seat"])
             if seat_key in seen_seats:
                 raise ValidationError({
-                    "tickets": f"Duplication of space in one order: Row {seat_key[0]}, Seat {seat_key[1]}."
+                    "tickets": f"Duplication of space in one order:"
+                               f" Row {seat_key[0]}, Seat {seat_key[1]}."
                 })
             seen_seats.add(seat_key)
 
@@ -1026,27 +1122,33 @@ class OrderSerializer(serializers.ModelSerializer):
 
             request = self.context.get("request")
             if not request or not hasattr(request, "user"):
-                raise Exception("Error: 'request' not pass in serializer context.")
+                raise Exception(
+                    "Error: 'request' not pass in serializer context."
+                )
             user = request.user
 
-            requested_seats = {(ticket["row"], ticket["seat"]) for ticket in tickets_data}
+            requested_seats = {(
+                ticket["row"],
+                ticket["seat"]
+            ) for ticket in tickets_data}
 
             taken_seats = set(
                 Ticket.objects.select_for_update()
-                .filter(flight=flight, row__in=[f_row for f_row, f_seat in requested_seats],
-                        seat__in=[f_seat for f_row, f_seat in requested_seats])
+                .filter(
+                    flight=flight,
+                    row__in=[f_row for f_row, f_seat in requested_seats],
+                    seat__in=[f_seat for f_row, f_seat in requested_seats])
                 .values_list("row", "seat")
             )
 
             conflicting_seats = requested_seats.intersection(taken_seats)
             if conflicting_seats:
-                raise ValidationError(
-                    {
+                raise ValidationError({
                     "tickets": [
-                        f"This place already taken: row={row}, seat={seat}" for row, seat in conflicting_seats
+                        f"This place already taken: row={row}, "
+                        f"seat={seat}" for row, seat in conflicting_seats
                     ]
-                }
-                )
+                })
 
             order = Order.objects.create(
                 flight=flight,
@@ -1110,23 +1212,32 @@ class OrderUpdateSerializer(serializers.ModelSerializer):
                 for ord_ticket in tickets_data
             ]
 
-            requested_seats = {(o_ticket.row, o_ticket.seat) for o_ticket in new_tickets}
+            requested_seats = {
+                (o_ticket.row, o_ticket.seat) for o_ticket in new_tickets
+            }
             taken_seats = set(
                 Ticket.objects.select_for_update()
-                .filter(flight=flight, row__in=[f_row for f_row, f_seat in requested_seats],
-                        seat__in=[f_seat for f_row, f_seat in requested_seats])
+                .filter(
+                    flight=flight,
+                    row__in=[f_row for f_row, f_seat in requested_seats],
+                    seat__in=[f_seat for f_row, f_seat in requested_seats]
+                )
                 .values_list("row", "seat")
             )
 
             if requested_seats.intersection(taken_seats):
-                raise serializers.ValidationError({"tickets": "One or more tickets already taken."})
+                raise serializers.ValidationError(
+                    {"tickets": "One or more tickets already taken."}
+                )
 
             Ticket.objects.bulk_create(new_tickets)
 
             instance.total_price = flight.price * len(new_tickets)
             instance.save()
 
-            final_instance = Order.objects.prefetch_related("tickets").get(pk=instance.pk)
+            final_instance = Order.objects.prefetch_related(
+                "tickets"
+            ).get(pk=instance.pk)
 
             return final_instance
 
@@ -1159,6 +1270,7 @@ class OrderDetailSerializer(OrderSerializer):
         source="flight.route.destination.name",
         read_only=True
     )
+
     class Meta:
         model = Order
         fields = (
